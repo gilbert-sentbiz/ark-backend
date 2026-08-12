@@ -5,7 +5,7 @@ build/
 *.jar
 *.war
 *.ear
-out/
+/out/
 .idea/
 *.iml
 .DS_Store

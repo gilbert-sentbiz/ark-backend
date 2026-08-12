@@ -102,13 +102,7 @@ class CaseService(
                 }.distinct()
 
         val segmentMeta = mapOf("matchedSegments" to matchedSegments.map { mapOf("code" to it.code, "label" to it.label) })
-        val services =
-            answers["services"]?.let { v ->
-                when (v) {
-                    is List<*> -> v.filterNotNull().map { it.toString() }
-                    else -> listOf(v.toString())
-                }
-            } ?: emptyList()
+        val services = matchedSegments.filter { it.axis == "service" }.map { it.code }
         val entityCode = matchedSegments.firstOrNull { it.axis == "entity" }?.code
 
         val updated =
@@ -175,9 +169,8 @@ class CaseService(
         val case = requireCase(caseId)
         val (nextStatus, requiredRole) =
             when (case.status) {
-                CaseStatus.INQUIRY_RECEIVED -> Pair(CaseStatus.DOCUMENT_SUBMISSION_REQUIRED, "OPS")
-                CaseStatus.DOCUMENT_SUBMISSION_REQUIRED -> Pair(CaseStatus.INITIAL_SCREENING, "OPS")
-                CaseStatus.INITIAL_SCREENING -> Pair(CaseStatus.APPROVAL_REVIEW_REQUIRED, "COMPLIANCE")
+                CaseStatus.INITIAL_SCREENING -> Pair(CaseStatus.DOCUMENT_SCREENING_REQUIRED, "SALES")
+                CaseStatus.DOCUMENT_SCREENING_REQUIRED -> Pair(CaseStatus.APPROVAL_REVIEW_REQUIRED, "OPS")
                 CaseStatus.APPROVAL_REVIEW_REQUIRED -> Pair(CaseStatus.ACCOUNT_SETUP_REQUIRED, "COMPLIANCE")
                 CaseStatus.ACCOUNT_SETUP_REQUIRED -> Pair(CaseStatus.COMPLETED, "OPS")
                 else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이 상태에서는 전진할 수 없습니다: ${case.status}")
@@ -191,33 +184,6 @@ class CaseService(
             eventType = EventType.CASE_STATUS_CHANGED,
             actor = Actor(ActorType.STAFF, staff.id),
             payload = mapOf("from" to case.status, "to" to nextStatus),
-        )
-        return saved
-    }
-
-    @Transactional
-    fun requestRevision(
-        caseId: UUID,
-        staff: AuthenticatedStaff,
-        reason: String,
-    ): OnboardingCase {
-        val case = requireCase(caseId)
-        if (case.status in setOf(CaseStatus.COMPLETED, CaseStatus.CLOSED)) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "종료된 케이스는 반려할 수 없습니다")
-        }
-        requireRole(staff, "OPS", "COMPLIANCE", "ADMIN")
-
-        val updated =
-            case.copy(
-                status = CaseStatus.REVISION_REQUESTED,
-                revisionRequestedFrom = case.status,
-            )
-        val saved = adapter.save(updated)
-        eventAppender.append(
-            caseId = caseId,
-            eventType = EventType.CASE_STATUS_CHANGED,
-            actor = Actor(ActorType.STAFF, staff.id),
-            payload = mapOf("from" to case.status, "to" to CaseStatus.REVISION_REQUESTED, "reason" to reason),
         )
         return saved
     }

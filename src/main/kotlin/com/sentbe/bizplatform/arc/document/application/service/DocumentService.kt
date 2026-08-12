@@ -1,5 +1,7 @@
 package com.sentbe.bizplatform.arc.document.application.service
 
+import com.sentbe.bizplatform.arc.case.adapter.out.CaseJdbcAdapter
+import com.sentbe.bizplatform.arc.case.application.domain.CaseStatus
 import com.sentbe.bizplatform.arc.document.adapter.out.DocumentJdbcAdapter
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentDetail
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentFile
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
+import java.time.OffsetDateTime
 import java.util.UUID
 
 private val ALLOWED_TYPES = setOf("application/pdf", "image/png", "image/jpeg")
@@ -20,6 +23,7 @@ private const val MAX_SIZE_BYTES = 10 * 1024 * 1024
 class DocumentService(
     private val adapter: DocumentJdbcAdapter,
     private val storage: S3StorageService,
+    private val caseAdapter: CaseJdbcAdapter,
 ) {
     fun getDocuments(
         caseId: UUID,
@@ -38,8 +42,11 @@ class DocumentService(
         }
         validateFile(file)
 
+        val caseId = doc.caseId
+        val wasRevisionRequired = doc.status == "REVISION_REQUIRED"
+
         val ext = file.originalFilename?.substringAfterLast('.', "") ?: ""
-        val key = "${doc.caseId}/$documentId/${UUID.randomUUID()}.$ext"
+        val key = "$caseId/$documentId/${UUID.randomUUID()}.$ext"
         storage.upload(key, file.bytes, file.contentType ?: "application/octet-stream")
 
         adapter.markPreviousFilesOld(documentId)
@@ -54,16 +61,31 @@ class DocumentService(
                 uploaderType = "CUSTOMER",
                 uploaderStaffId = null,
                 isLatest = true,
-                uploadedAt = java.time.OffsetDateTime.now(),
+                uploadedAt = OffsetDateTime.now(),
             ),
         )
 
-        if (doc.status == "REVISION_REQUIRED") {
+        if (wasRevisionRequired) {
             adapter.resolveOpenRevisions(documentId)
+            if (adapter.countOpenRevisionsByCaseId(caseId) == 0) {
+                val currentCase = caseAdapter.findById(caseId)
+                val returnTo = currentCase?.revisionRequestedFrom
+                if (currentCase?.status == CaseStatus.REVISION_REQUESTED && returnTo != null) {
+                    caseAdapter.save(currentCase.copy(status = returnTo, revisionRequestedFrom = null))
+                }
+            }
         }
+
         adapter.updateStatus(documentId, "SUBMITTED")
 
-        return adapter.findByCaseId(doc.caseId).first { it.document.id == documentId }
+        val currentCase = caseAdapter.findById(caseId)
+        if (currentCase?.status == CaseStatus.DOCUMENT_SUBMISSION_REQUIRED &&
+            !adapter.hasUnsubmittedRequiredDocs(caseId)
+        ) {
+            caseAdapter.save(currentCase.copy(status = CaseStatus.INITIAL_SCREENING))
+        }
+
+        return adapter.findByCaseId(caseId).first { it.document.id == documentId }
     }
 
     @Transactional
@@ -72,7 +94,7 @@ class DocumentService(
         staff: AuthenticatedStaff,
         reason: String,
     ): DocumentDetail {
-        requireRole(staff, "OPS", "COMPLIANCE", "ADMIN")
+        requireRole(staff, "OPS", "COMPLIANCE", "ADMIN", "SALES")
         val doc = requireDocument(documentId)
         if (doc.status !in setOf("SUBMITTED", "APPROVED")) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "반려할 수 없는 상태입니다: ${doc.status}")
@@ -81,18 +103,41 @@ class DocumentService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "반려 사유는 필수입니다")
         }
 
+        val case =
+            caseAdapter.findById(doc.caseId)
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
+        if (case.status in setOf(CaseStatus.COMPLETED, CaseStatus.CLOSED)) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "종료된 케이스의 서류는 반려할 수 없습니다")
+        }
+
+        val caseStatusForRevision =
+            if (case.status == CaseStatus.REVISION_REQUESTED) {
+                case.revisionRequestedFrom ?: case.status
+            } else {
+                case.status
+            }
+
         adapter.insertRevisionRequest(
             RevisionRequest(
                 id = UUID.randomUUID(),
                 documentId = documentId,
                 reason = reason,
                 requestedByStaffId = staff.id,
-                requestedFromStatus = doc.status,
-                requestedAt = java.time.OffsetDateTime.now(),
+                requestedFromStatus = caseStatusForRevision,
+                requestedAt = OffsetDateTime.now(),
                 resolvedAt = null,
             ),
         )
         adapter.updateStatus(documentId, "REVISION_REQUIRED")
+
+        if (case.status != CaseStatus.REVISION_REQUESTED) {
+            caseAdapter.save(
+                case.copy(
+                    status = CaseStatus.REVISION_REQUESTED,
+                    revisionRequestedFrom = case.status,
+                ),
+            )
+        }
 
         return adapter.findByCaseId(doc.caseId).first { it.document.id == documentId }
     }

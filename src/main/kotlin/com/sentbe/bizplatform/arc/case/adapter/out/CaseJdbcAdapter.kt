@@ -1,0 +1,217 @@
+package com.sentbe.bizplatform.arc.case.adapter.out
+
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.sentbe.bizplatform.arc.case.application.domain.IntakeResponse
+import com.sentbe.bizplatform.arc.case.application.domain.OnboardingCase
+import org.springframework.jdbc.core.simple.JdbcClient
+import org.springframework.stereotype.Component
+import java.sql.ResultSet
+import java.time.OffsetDateTime
+import java.util.UUID
+
+private val MAPPER = ObjectMapper().findAndRegisterModules()
+private val MAP_TYPE = object : TypeReference<Map<String, Any>>() {}
+
+@Component
+class CaseJdbcAdapter(
+    private val jdbc: JdbcClient,
+) {
+    fun save(case: OnboardingCase): OnboardingCase {
+        val exists =
+            jdbc
+                .sql("SELECT 1 FROM onboarding_case WHERE id = :id")
+                .param("id", case.id)
+                .query(Int::class.java)
+                .optional()
+                .isPresent
+
+        if (exists) {
+            jdbc
+                .sql(
+                    """UPDATE onboarding_case
+                   SET status = :status, close_reason = :closeReason,
+                       revision_requested_from = :revisionRequestedFrom,
+                       entity_code = :entityCode,
+                       services = :services::text[], sectors = :sectors::text[],
+                       segment_meta = :segmentMeta::jsonb,
+                       pinned_question_ids = :pinnedQuestionIds::jsonb,
+                       assignee_staff_id = :assigneeStaffId,
+                       last_customer_action_at = :lastCustomerActionAt,
+                       updated_at = now()
+                   WHERE id = :id""",
+                ).param("id", case.id)
+                .param("status", case.status)
+                .param("closeReason", case.closeReason)
+                .param("revisionRequestedFrom", case.revisionRequestedFrom)
+                .param("entityCode", case.entityCode)
+                .param("services", case.services.toPgArray())
+                .param("sectors", case.sectors.toPgArray())
+                .param("segmentMeta", MAPPER.writeValueAsString(case.segmentMeta))
+                .param("pinnedQuestionIds", MAPPER.writeValueAsString(case.pinnedQuestionIds))
+                .param("assigneeStaffId", case.assigneeStaffId)
+                .param("lastCustomerActionAt", case.lastCustomerActionAt)
+                .update()
+        } else {
+            jdbc
+                .sql(
+                    """INSERT INTO onboarding_case
+                   (id, customer_id, status, services, sectors, segment_meta, pinned_question_ids)
+                   VALUES (:id, :customerId, :status, :services::text[], :sectors::text[],
+                           :segmentMeta::jsonb, :pinnedQuestionIds::jsonb)""",
+                ).param("id", case.id)
+                .param("customerId", case.customerId)
+                .param("status", case.status)
+                .param("services", case.services.toPgArray())
+                .param("sectors", case.sectors.toPgArray())
+                .param("segmentMeta", MAPPER.writeValueAsString(case.segmentMeta))
+                .param("pinnedQuestionIds", MAPPER.writeValueAsString(case.pinnedQuestionIds))
+                .update()
+        }
+        return findById(case.id)!!
+    }
+
+    fun findById(id: UUID): OnboardingCase? =
+        jdbc
+            .sql("SELECT * FROM onboarding_case WHERE id = :id")
+            .param("id", id)
+            .query { rs, _ -> rs.toCase() }
+            .optional()
+            .orElse(null)
+
+    fun findByCustomerId(customerId: UUID): OnboardingCase? =
+        jdbc
+            .sql("SELECT * FROM onboarding_case WHERE customer_id = :customerId ORDER BY created_at DESC LIMIT 1")
+            .param("customerId", customerId)
+            .query { rs, _ -> rs.toCase() }
+            .optional()
+            .orElse(null)
+
+    fun findAllForDashboard(): List<OnboardingCase> =
+        jdbc
+            .sql("SELECT * FROM onboarding_case ORDER BY updated_at DESC")
+            .query { rs, _ -> rs.toCase() }
+            .list()
+
+    fun saveIntake(intake: IntakeResponse): IntakeResponse {
+        val exists =
+            jdbc
+                .sql("SELECT 1 FROM intake_response WHERE case_id = :caseId AND phase = :phase")
+                .param("caseId", intake.caseId)
+                .param("phase", intake.phase)
+                .query(Int::class.java)
+                .optional()
+                .isPresent
+
+        if (exists) {
+            jdbc
+                .sql(
+                    """UPDATE intake_response
+                   SET status = :status, answers = :answers::jsonb,
+                       saved_at = now(), submitted_at = :submittedAt
+                   WHERE case_id = :caseId AND phase = :phase""",
+                ).param("caseId", intake.caseId)
+                .param("phase", intake.phase)
+                .param("status", intake.status)
+                .param("answers", MAPPER.writeValueAsString(intake.answers))
+                .param("submittedAt", intake.submittedAt)
+                .update()
+        } else {
+            jdbc
+                .sql(
+                    """INSERT INTO intake_response (case_id, phase, status, answers)
+                   VALUES (:caseId, :phase, :status, :answers::jsonb)""",
+                ).param("caseId", intake.caseId)
+                .param("phase", intake.phase)
+                .param("status", intake.status)
+                .param("answers", MAPPER.writeValueAsString(intake.answers))
+                .update()
+        }
+        return findIntake(intake.caseId, intake.phase)!!
+    }
+
+    fun findIntake(
+        caseId: UUID,
+        phase: String,
+    ): IntakeResponse? =
+        jdbc
+            .sql("SELECT * FROM intake_response WHERE case_id = :caseId AND phase = :phase")
+            .param("caseId", caseId)
+            .param("phase", phase)
+            .query { rs, _ -> rs.toIntake() }
+            .optional()
+            .orElse(null)
+
+    fun findCaseEvents(caseId: UUID): List<Map<String, Any>> =
+        jdbc
+            .sql("SELECT * FROM case_event WHERE case_id = :caseId ORDER BY created_at")
+            .param("caseId", caseId)
+            .query { rs, _ ->
+                mapOf<String, Any>(
+                    "id" to rs.getString("id"),
+                    "eventType" to rs.getString("event_type"),
+                    "actorType" to rs.getString("actor_type"),
+                    "actorId" to (rs.getString("actor_id") ?: ""),
+                    "payload" to rs.getString("payload"),
+                    "createdAt" to rs.getString("created_at"),
+                )
+            }.list()
+
+    fun createDocumentsForCase(
+        caseId: UUID,
+        docTemplates: List<Pair<UUID, Map<String, Any>>>,
+    ) {
+        docTemplates.forEach { (templateId, info) ->
+            jdbc
+                .sql(
+                    """INSERT INTO document (case_id, doc_template_id, type, display_name, is_required, is_conditional)
+                   VALUES (:caseId, :templateId, :type, :displayName, :isRequired, :isConditional)
+                   ON CONFLICT (case_id, type) DO NOTHING""",
+                ).param("caseId", caseId)
+                .param("templateId", templateId)
+                .param("type", info["type"] as String)
+                .param("displayName", info["displayName"] as String)
+                .param("isRequired", info["isRequired"] as Boolean)
+                .param("isConditional", info["isConditional"] as Boolean)
+                .update()
+        }
+    }
+
+    private fun ResultSet.toCase(): OnboardingCase {
+        val servicesArray = getArray("services")
+        val sectorsArray = getArray("sectors")
+        return OnboardingCase(
+            id = UUID.fromString(getString("id")),
+            customerId = UUID.fromString(getString("customer_id")),
+            status = getString("status"),
+            closeReason = getString("close_reason"),
+            revisionRequestedFrom = getString("revision_requested_from"),
+            entityCode = getString("entity_code"),
+            services = servicesArray?.toStringList() ?: emptyList(),
+            sectors = sectorsArray?.toStringList() ?: emptyList(),
+            segmentMeta = MAPPER.readValue(getString("segment_meta") ?: "{}", MAP_TYPE),
+            pinnedQuestionIds = MAPPER.readValue(getString("pinned_question_ids") ?: "{}", MAP_TYPE),
+            assigneeStaffId = getString("assignee_staff_id")?.let { UUID.fromString(it) },
+            lastCustomerActionAt = getObject("last_customer_action_at", OffsetDateTime::class.java),
+            createdAt = getObject("created_at", OffsetDateTime::class.java),
+            updatedAt = getObject("updated_at", OffsetDateTime::class.java),
+        )
+    }
+
+    private fun ResultSet.toIntake(): IntakeResponse =
+        IntakeResponse(
+            id = UUID.fromString(getString("id")),
+            caseId = UUID.fromString(getString("case_id")),
+            phase = getString("phase"),
+            status = getString("status"),
+            answers = MAPPER.readValue(getString("answers") ?: "{}", MAP_TYPE),
+            savedAt = getObject("saved_at", OffsetDateTime::class.java),
+            submittedAt = getObject("submitted_at", OffsetDateTime::class.java),
+        )
+
+    private fun java.sql.Array.toStringList(): List<String> =
+        @Suppress("UNCHECKED_CAST")
+        (array as? Array<Any?>)?.filterNotNull()?.map { it.toString() } ?: emptyList()
+
+    private fun List<String>.toPgArray(): String = "{${joinToString(",") { it.replace(",", "\\,") }}}"
+}

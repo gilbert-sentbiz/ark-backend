@@ -28,7 +28,7 @@ class InternalDocumentController(
         val staff =
             AuthContext.staff
                 ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
-        return service.requestRevision(id, staff, body.reason).toMap(hideInternalRevisions = false)
+        return service.requestRevision(id, staff, body.reason).toMap()
     }
 
     @PostMapping("/{id}/approve")
@@ -38,6 +38,6 @@ class InternalDocumentController(
         val staff =
             AuthContext.staff
                 ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
-        return service.approveDocument(id, staff).toMap(hideInternalRevisions = false)
+        return service.approveDocument(id, staff).toMap()
     }
 }

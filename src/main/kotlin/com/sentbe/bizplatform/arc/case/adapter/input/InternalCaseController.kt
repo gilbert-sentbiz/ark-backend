@@ -12,10 +12,6 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
-data class RevisionBody(
-    val reason: String,
-)
-
 data class CloseBody(
     val reason: String,
 )
@@ -70,16 +66,6 @@ class InternalCaseController(
     ): Map<String, Any> {
         val staff = requireStaff()
         val case = service.advanceStatus(id, staff)
-        return mapOf("id" to case.id, "status" to case.status)
-    }
-
-    @PostMapping("/{id}/reject")
-    fun reject(
-        @PathVariable id: UUID,
-        @RequestBody body: RevisionBody,
-    ): Map<String, Any> {
-        val staff = requireStaff()
-        val case = service.requestRevision(id, staff, body.reason)
         return mapOf("id" to case.id, "status" to case.status)
     }
 

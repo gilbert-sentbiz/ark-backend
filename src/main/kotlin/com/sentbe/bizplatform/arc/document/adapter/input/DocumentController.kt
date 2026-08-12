@@ -26,7 +26,7 @@ class DocumentController(
         val customer =
             AuthContext.customer
                 ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
-        return service.getDocuments(caseId, customer).map { it.toMap(hideInternalRevisions = true) }
+        return service.getDocuments(caseId, customer).map { it.toMap() }
     }
 
     @PostMapping("/{docId}/file")
@@ -38,11 +38,11 @@ class DocumentController(
         val customer =
             AuthContext.customer
                 ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
-        return service.uploadFile(docId, file, customer).toMap(hideInternalRevisions = false)
+        return service.uploadFile(docId, file, customer).toMap()
     }
 }
 
-fun DocumentDetail.toMap(hideInternalRevisions: Boolean): Map<String, Any> =
+fun DocumentDetail.toMap(): Map<String, Any> =
     mapOf(
         "id" to document.id,
         "type" to document.type,
@@ -55,11 +55,7 @@ fun DocumentDetail.toMap(hideInternalRevisions: Boolean): Map<String, Any> =
             } ?: emptyMap<String, Any>()
         ),
         "openRevisions" to
-            if (hideInternalRevisions) {
-                emptyList<Any>()
-            } else {
-                openRevisions.map { r ->
-                    mapOf("id" to r.id, "reason" to r.reason, "requestedAt" to r.requestedAt)
-                }
+            openRevisions.map { r ->
+                mapOf("id" to r.id, "reason" to r.reason, "requestedAt" to r.requestedAt)
             },
     )
