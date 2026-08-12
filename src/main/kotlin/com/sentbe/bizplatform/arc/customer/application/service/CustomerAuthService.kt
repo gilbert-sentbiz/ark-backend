@@ -53,7 +53,7 @@ class CustomerAuthService(
         val token = UUID.randomUUID().toString()
         sessionRepo.save(
             CustomerSession(
-                customerId = customer.id,
+                customerId = customer.id!!,
                 token = token,
                 expiresAt = OffsetDateTime.now().plusHours(sessionHours),
             ),

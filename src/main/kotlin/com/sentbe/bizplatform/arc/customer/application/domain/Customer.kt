@@ -7,7 +7,7 @@ import java.util.UUID
 
 @Table("customer")
 data class Customer(
-    @Id val id: UUID = UUID.randomUUID(),
+    @Id val id: UUID? = null,
     val email: String,
     val authMethod: String = "otp",
     val passwordHash: String? = null,

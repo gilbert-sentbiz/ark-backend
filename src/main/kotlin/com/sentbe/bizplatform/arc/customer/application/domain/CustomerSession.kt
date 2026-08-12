@@ -7,7 +7,7 @@ import java.util.UUID
 
 @Table("customer_session")
 data class CustomerSession(
-    @Id val id: UUID = UUID.randomUUID(),
+    @Id val id: UUID? = null,
     val customerId: UUID,
     val token: String,
     val expiresAt: OffsetDateTime,

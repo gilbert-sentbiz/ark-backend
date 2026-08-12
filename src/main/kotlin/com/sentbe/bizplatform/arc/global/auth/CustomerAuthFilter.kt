@@ -32,7 +32,9 @@ class CustomerAuthFilter(
                 if (session != null && session.expiresAt.isAfter(OffsetDateTime.now())) {
                     val customer = customerRepo.findById(session.customerId).orElse(null)
                     if (customer != null) {
-                        AuthContext.customer = AuthenticatedCustomer(customer.id, customer.email)
+                        if (customer.id != null) {
+                            AuthContext.customer = AuthenticatedCustomer(customer.id, customer.email)
+                        }
                     }
                 }
             }

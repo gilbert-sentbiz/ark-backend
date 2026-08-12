@@ -5,6 +5,8 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.util.UUID
 
+private val MAPPER = ObjectMapper().findAndRegisterModules()
+
 enum class EventType { CASE_CREATED, CASE_STATUS_CHANGED, DOC_STATUS_CHANGED, ASSIGNEE_CHANGED }
 
 enum class ActorType { CUSTOMER, STAFF, SYSTEM }
@@ -17,7 +19,6 @@ data class Actor(
 @Component
 class CaseEventAppender(
     private val jdbc: JdbcClient,
-    private val mapper: ObjectMapper,
 ) {
     fun append(
         caseId: UUID,
@@ -33,7 +34,7 @@ class CaseEventAppender(
             .param("eventType", eventType.name)
             .param("actorType", actor.type.name)
             .param("actorId", actor.id)
-            .param("payload", mapper.writeValueAsString(payload))
+            .param("payload", MAPPER.writeValueAsString(payload))
             .update()
     }
 }
