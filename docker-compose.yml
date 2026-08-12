@@ -1,0 +1,80 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-arc}
+      POSTGRES_USER: ${DB_USERNAME:-arc}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-arc}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USERNAME:-arc}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  storage:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      retries: 10
+
+  createbuckets:
+    image: minio/mc:latest
+    depends_on:
+      storage:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://storage:9000 ${S3_ACCESS_KEY:-minioadmin} ${S3_SECRET_KEY:-minioadmin};
+      mc mb --ignore-existing local/${S3_BUCKET:-arc-documents};
+      exit 0;
+      "
+
+  backend:
+    build: .
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-arc}
+      DB_USERNAME: ${DB_USERNAME:-arc}
+      DB_PASSWORD: ${DB_PASSWORD:-arc}
+      S3_ENDPOINT: http://storage:9000
+      S3_BUCKET: ${S3_BUCKET:-arc-documents}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      createbuckets:
+        condition: service_completed_successfully
+
+volumes:
+  pg_data:
+  minio_data:

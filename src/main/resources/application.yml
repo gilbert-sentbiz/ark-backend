@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: arc-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/arc}
+    username: ${DB_USERNAME:arc}
+    password: ${DB_PASSWORD:arc}
+    driver-class-name: org.postgresql.Driver
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+arc:
+  s3:
+    endpoint: ${S3_ENDPOINT:http://localhost:9000}
+    bucket: ${S3_BUCKET:arc-documents}
+    access-key: ${S3_ACCESS_KEY:minioadmin}
+    secret-key: ${S3_SECRET_KEY:minioadmin}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  config: classpath:log4j2.xml
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev,stg,prd
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+
+arc:
+  secrets:
+    manager:
+      secret-id: ${SECRETS_MANAGER_SECRET_ID}
+      region: ${AWS_REGION:ap-northeast-2}

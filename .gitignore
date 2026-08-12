@@ -1,0 +1,11 @@
+.gradle/
+build/
+.env
+*.class
+*.jar
+*.war
+*.ear
+out/
+.idea/
+*.iml
+.DS_Store

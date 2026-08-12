@@ -1,0 +1,51 @@
+[versions]
+kotlin = "2.3.20"
+spring-boot = "4.1.0"
+spring-dependency-management = "1.1.7"
+ktlint-gradle = "12.1.2"
+ktlint = "1.8.0"
+kotest = "6.0.0"
+kotest-spring = "1.3.0"
+testcontainers = "1.21.0"
+mockito-kotlin = "5.4.0"
+mockwebserver = "4.12.0"
+aws-sdk = "2.31.0"
+springdoc = "2.8.0"
+asciidoctor = "4.0.0"
+liquibase = "4.31.0"
+kotlinx-serialization = "1.8.0"
+kotlinx-coroutines = "1.10.0"
+
+[libraries]
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc" }
+spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
+spring-restdocs-mockmvc = { module = "org.springframework.restdocs:spring-restdocs-mockmvc" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+postgresql = { module = "org.postgresql:postgresql" }
+liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
+aws-secretsmanager = { module = "software.amazon.awssdk:secretsmanager", version.ref = "aws-sdk" }
+aws-s3 = { module = "software.amazon.awssdk:s3", version.ref = "aws-sdk" }
+springdoc-openapi-starter = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version.ref = "kotest-spring" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "mockwebserver" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
+asciidoctor = { id = "org.asciidoctor.jvm.convert", version.ref = "asciidoctor" }
