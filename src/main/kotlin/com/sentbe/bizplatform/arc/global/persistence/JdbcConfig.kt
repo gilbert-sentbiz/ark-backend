@@ -13,7 +13,6 @@ class JdbcConfig(
     private val jsonbToList: JsonbToListConverter,
     private val arrayToList: ArrayToStringListConverter,
 ) : AbstractJdbcConfiguration() {
-
     @Bean
     override fun jdbcCustomConversions(): JdbcCustomConversions =
         JdbcCustomConversions(

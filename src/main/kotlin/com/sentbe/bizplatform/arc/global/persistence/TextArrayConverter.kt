@@ -9,11 +9,10 @@ import java.sql.Array
 @WritingConverter
 @Component
 class StringListToArrayConverter : Converter<List<String>, Array> {
-    override fun convert(source: List<String>): Array {
+    override fun convert(source: List<String>): Array =
         throw UnsupportedOperationException(
             "text[] write requires JdbcOperations.createArrayOf — use TextArrayWriteSupport",
         )
-    }
 }
 
 @ReadingConverter

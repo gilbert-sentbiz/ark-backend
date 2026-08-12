@@ -19,13 +19,21 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueReques
  */
 interface CredentialSource {
     fun dbUrl(): String
+
     fun dbUsername(): String
+
     fun dbPassword(): String
+
     fun s3Endpoint(): String?
+
     fun s3Bucket(): String
+
     fun s3AccessKey(): String
+
     fun s3SecretKey(): String
+
     fun redisHost(): String
+
     fun redisPort(): Int
 }
 
@@ -46,13 +54,21 @@ class EnvCredentialConfig {
     ): CredentialSource =
         object : CredentialSource {
             override fun dbUrl() = dbUrl
+
             override fun dbUsername() = dbUser
+
             override fun dbPassword() = dbPass
+
             override fun s3Endpoint() = s3Endpoint.ifBlank { null }
+
             override fun s3Bucket() = s3Bucket
+
             override fun s3AccessKey() = s3AccessKey
+
             override fun s3SecretKey() = s3SecretKey
+
             override fun redisHost() = redisHost
+
             override fun redisPort() = redisPort
         }
 }
@@ -68,17 +84,27 @@ class AwsCredentialConfig(
         val client = SecretsManagerClient.builder().region(Region.of(awsRegion)).build()
         val json = client.getSecretValue(GetSecretValueRequest.builder().secretId(secretId).build()).secretString()
         val map = mapper.readValue(json, Map::class.java) as Map<*, *>
+
         fun str(key: String) = map[key]?.toString() ?: error("Missing secret key: $key")
+
         fun strOrNull(key: String) = map[key]?.toString()
         return object : CredentialSource {
             override fun dbUrl() = str("DB_URL")
+
             override fun dbUsername() = str("DB_USERNAME")
+
             override fun dbPassword() = str("DB_PASSWORD")
+
             override fun s3Endpoint() = strOrNull("S3_ENDPOINT")
+
             override fun s3Bucket() = str("S3_BUCKET")
+
             override fun s3AccessKey() = str("S3_ACCESS_KEY")
+
             override fun s3SecretKey() = str("S3_SECRET_KEY")
+
             override fun redisHost() = str("REDIS_HOST")
+
             override fun redisPort() = str("REDIS_PORT").toInt()
         }
     }

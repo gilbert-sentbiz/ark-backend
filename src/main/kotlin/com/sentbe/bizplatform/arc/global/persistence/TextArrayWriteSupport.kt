@@ -9,8 +9,11 @@ import java.sql.Connection
  * Use this helper when an aggregate has a text[] column (services, sectors).
  */
 @Component
-class TextArrayWriteSupport(private val jdbc: JdbcClient) {
-
-    fun toSqlArray(conn: Connection, values: List<String>): java.sql.Array =
-        conn.createArrayOf("text", values.toTypedArray())
+class TextArrayWriteSupport(
+    private val jdbc: JdbcClient,
+) {
+    fun toSqlArray(
+        conn: Connection,
+        values: List<String>,
+    ): java.sql.Array = conn.createArrayOf("text", values.toTypedArray())
 }

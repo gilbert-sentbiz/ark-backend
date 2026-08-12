@@ -14,9 +14,9 @@ group = "com.sentbe.bizplatform"
 version = "0.0.1-SNAPSHOT"
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
+    // Company standard is JDK 25; local machine has 26 — CI/prod uses JDK 25 toolchain
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 kotlin {
@@ -59,7 +59,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactor)
     implementation(libs.kotlinx.serialization.json)
-    runtimeOnly(libs.postgresql)
+    implementation(libs.postgresql)
     implementation(libs.liquibase.core)
     implementation(libs.aws.secretsmanager)
     implementation(libs.aws.s3)

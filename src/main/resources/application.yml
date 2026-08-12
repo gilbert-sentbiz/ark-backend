@@ -26,6 +26,10 @@ spring:
       port: ${REDIS_PORT:6379}
 
 arc:
+  auth:
+    otp-ttl-seconds: 300
+    session-hours: 72
+    staff-session-hours: 8
   s3:
     endpoint: ${S3_ENDPOINT:http://localhost:9000}
     bucket: ${S3_BUCKET:arc-documents}
