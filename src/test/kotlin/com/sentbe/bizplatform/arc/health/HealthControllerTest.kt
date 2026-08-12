@@ -6,7 +6,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 
 class HealthControllerTest {
-
     private val mockMvc: MockMvc? = null
 
     @Test
