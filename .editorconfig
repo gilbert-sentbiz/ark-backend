@@ -13,3 +13,5 @@ indent_size = 2
 
 [*.{kts,kt}]
 indent_size = 4
+# Hexagonal `adapter.in` / `port.in` packages use `in` (hard keyword requiring backtick); disable the check.
+ktlint_standard_package-name = disabled

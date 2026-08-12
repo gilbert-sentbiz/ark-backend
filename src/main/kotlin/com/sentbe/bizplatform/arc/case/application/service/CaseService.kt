@@ -1,9 +1,10 @@
 package com.sentbe.bizplatform.arc.case.application.service
 
-import com.sentbe.bizplatform.arc.case.adapter.out.CaseJdbcAdapter
 import com.sentbe.bizplatform.arc.case.application.domain.CaseStatus
 import com.sentbe.bizplatform.arc.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.arc.case.application.domain.OnboardingCase
+import com.sentbe.bizplatform.arc.case.application.port.`in`.CaseUseCase
+import com.sentbe.bizplatform.arc.case.application.port.out.CaseOutPort
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedStaff
 import com.sentbe.bizplatform.arc.global.event.Actor
 import com.sentbe.bizplatform.arc.global.event.ActorType
@@ -18,13 +19,13 @@ import java.util.UUID
 
 @Service
 class CaseService(
-    private val adapter: CaseJdbcAdapter,
+    private val adapter: CaseOutPort,
     private val ruleService: RuleQueryService,
     private val classificationService: ClassificationService,
     private val eventAppender: CaseEventAppender,
-) {
+) : CaseUseCase {
     @Transactional
-    fun createCase(customerId: UUID): OnboardingCase {
+    override fun createCase(customerId: UUID): OnboardingCase {
         val existing = adapter.findByCustomerId(customerId)
         if (existing != null && existing.status !in setOf(CaseStatus.COMPLETED, CaseStatus.CLOSED)) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "진행 중인 케이스가 이미 있습니다")
@@ -55,7 +56,7 @@ class CaseService(
     }
 
     @Transactional
-    fun saveIntake(
+    override fun saveIntake(
         caseId: UUID,
         customerId: UUID,
         phase: String,
@@ -72,7 +73,7 @@ class CaseService(
     }
 
     @Transactional
-    fun submitFirstIntake(
+    override fun submitFirstIntake(
         caseId: UUID,
         customerId: UUID,
         answers: Map<String, Any>,
@@ -124,7 +125,7 @@ class CaseService(
     }
 
     @Transactional
-    fun submitSecondIntake(
+    override fun submitSecondIntake(
         caseId: UUID,
         customerId: UUID,
         answers: Map<String, Any>,
@@ -162,7 +163,7 @@ class CaseService(
     }
 
     @Transactional
-    fun advanceStatus(
+    override fun advanceStatus(
         caseId: UUID,
         staff: AuthenticatedStaff,
     ): OnboardingCase {
@@ -189,7 +190,7 @@ class CaseService(
     }
 
     @Transactional
-    fun closeCase(
+    override fun closeCase(
         caseId: UUID,
         staff: AuthenticatedStaff,
         reason: String,
@@ -213,15 +214,15 @@ class CaseService(
         return saved
     }
 
-    fun getCase(caseId: UUID): OnboardingCase =
+    override fun getCase(caseId: UUID): OnboardingCase =
         adapter.findById(caseId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
 
-    fun getCaseTimeline(caseId: UUID): List<Map<String, Any>> {
+    override fun getCaseTimeline(caseId: UUID): List<Map<String, Any>> {
         requireCase(caseId)
         return adapter.findCaseEvents(caseId)
     }
 
-    fun getAllCases(): List<OnboardingCase> = adapter.findAllForDashboard()
+    override fun getAllCases(): List<OnboardingCase> = adapter.findAllForDashboard()
 
     private fun requireCase(caseId: UUID): OnboardingCase =
         adapter.findById(caseId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")

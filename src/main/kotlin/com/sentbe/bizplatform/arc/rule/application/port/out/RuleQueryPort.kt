@@ -1,4 +1,4 @@
-package com.sentbe.bizplatform.arc.rule.application.port.output
+package com.sentbe.bizplatform.arc.rule.application.port.out
 
 import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.arc.rule.application.domain.Question

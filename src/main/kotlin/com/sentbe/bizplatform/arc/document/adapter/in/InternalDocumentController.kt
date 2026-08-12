@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.arc.document.adapter.input
+package com.sentbe.bizplatform.arc.document.adapter.`in`
 
-import com.sentbe.bizplatform.arc.document.application.service.DocumentService
+import com.sentbe.bizplatform.arc.document.application.port.`in`.DocumentUseCase
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PathVariable
@@ -18,7 +18,7 @@ data class RevisionRequestBody(
 @RestController
 @RequestMapping("/internal/documents")
 class InternalDocumentController(
-    private val service: DocumentService,
+    private val service: DocumentUseCase,
 ) {
     @PostMapping("/{id}/revision-requests")
     fun requestRevision(

@@ -1,7 +1,7 @@
-package com.sentbe.bizplatform.arc.document.adapter.input
+package com.sentbe.bizplatform.arc.document.adapter.`in`
 
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentDetail
-import com.sentbe.bizplatform.arc.document.application.service.DocumentService
+import com.sentbe.bizplatform.arc.document.application.port.`in`.DocumentUseCase
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -17,7 +17,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/cases/{caseId}/documents")
 class DocumentController(
-    private val service: DocumentService,
+    private val service: DocumentUseCase,
 ) {
     @GetMapping
     fun listDocuments(

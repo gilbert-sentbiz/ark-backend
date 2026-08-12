@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.sentbe.bizplatform.arc.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.arc.case.application.domain.OnboardingCase
+import com.sentbe.bizplatform.arc.case.application.port.out.CaseOutPort
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.sql.ResultSet
@@ -16,8 +17,8 @@ private val MAP_TYPE = object : TypeReference<Map<String, Any>>() {}
 @Component
 class CaseJdbcAdapter(
     private val jdbc: JdbcClient,
-) {
-    fun save(case: OnboardingCase): OnboardingCase {
+) : CaseOutPort {
+    override fun save(case: OnboardingCase): OnboardingCase {
         val exists =
             jdbc
                 .sql("SELECT 1 FROM onboarding_case WHERE id = :id")
@@ -71,7 +72,7 @@ class CaseJdbcAdapter(
         return findById(case.id)!!
     }
 
-    fun findById(id: UUID): OnboardingCase? =
+    override fun findById(id: UUID): OnboardingCase? =
         jdbc
             .sql("SELECT * FROM onboarding_case WHERE id = :id")
             .param("id", id)
@@ -79,7 +80,7 @@ class CaseJdbcAdapter(
             .optional()
             .orElse(null)
 
-    fun findByCustomerId(customerId: UUID): OnboardingCase? =
+    override fun findByCustomerId(customerId: UUID): OnboardingCase? =
         jdbc
             .sql("SELECT * FROM onboarding_case WHERE customer_id = :customerId ORDER BY created_at DESC LIMIT 1")
             .param("customerId", customerId)
@@ -87,13 +88,13 @@ class CaseJdbcAdapter(
             .optional()
             .orElse(null)
 
-    fun findAllForDashboard(): List<OnboardingCase> =
+    override fun findAllForDashboard(): List<OnboardingCase> =
         jdbc
             .sql("SELECT * FROM onboarding_case ORDER BY updated_at DESC")
             .query { rs, _ -> rs.toCase() }
             .list()
 
-    fun saveIntake(intake: IntakeResponse): IntakeResponse {
+    override fun saveIntake(intake: IntakeResponse): IntakeResponse {
         val exists =
             jdbc
                 .sql("SELECT 1 FROM intake_response WHERE case_id = :caseId AND phase = :phase")
@@ -130,7 +131,7 @@ class CaseJdbcAdapter(
         return findIntake(intake.caseId, intake.phase)!!
     }
 
-    fun findIntake(
+    override fun findIntake(
         caseId: UUID,
         phase: String,
     ): IntakeResponse? =
@@ -142,7 +143,7 @@ class CaseJdbcAdapter(
             .optional()
             .orElse(null)
 
-    fun findCaseEvents(caseId: UUID): List<Map<String, Any>> =
+    override fun findCaseEvents(caseId: UUID): List<Map<String, Any>> =
         jdbc
             .sql("SELECT * FROM case_event WHERE case_id = :caseId ORDER BY created_at")
             .param("caseId", caseId)
@@ -157,7 +158,7 @@ class CaseJdbcAdapter(
                 )
             }.list()
 
-    fun createDocumentsForCase(
+    override fun createDocumentsForCase(
         caseId: UUID,
         docTemplates: List<Pair<UUID, Map<String, Any>>>,
     ) {

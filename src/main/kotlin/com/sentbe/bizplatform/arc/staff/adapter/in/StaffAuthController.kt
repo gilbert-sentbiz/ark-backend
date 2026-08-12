@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.arc.staff.adapter.input
+package com.sentbe.bizplatform.arc.staff.adapter.`in`
 
-import com.sentbe.bizplatform.arc.staff.application.port.input.StaffAuthUseCase
+import com.sentbe.bizplatform.arc.staff.application.port.`in`.StaffAuthUseCase
 import org.springframework.context.annotation.Profile
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

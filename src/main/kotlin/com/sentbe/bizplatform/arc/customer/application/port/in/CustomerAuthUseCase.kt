@@ -1,4 +1,4 @@
-package com.sentbe.bizplatform.arc.customer.application.port.input
+package com.sentbe.bizplatform.arc.customer.application.port.`in`
 
 import java.util.UUID
 

@@ -1,4 +1,4 @@
-package com.sentbe.bizplatform.arc.rule.adapter.input
+package com.sentbe.bizplatform.arc.rule.adapter.`in`
 
 import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.arc.rule.application.domain.Question

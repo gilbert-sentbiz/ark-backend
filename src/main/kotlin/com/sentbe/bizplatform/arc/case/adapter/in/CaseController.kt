@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.arc.case.adapter.input
+package com.sentbe.bizplatform.arc.case.adapter.`in`
 
-import com.sentbe.bizplatform.arc.case.application.service.CaseService
+import com.sentbe.bizplatform.arc.case.application.port.`in`.CaseUseCase
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -21,7 +21,7 @@ data class IntakeBody(
 @RestController
 @RequestMapping("/cases")
 class CaseController(
-    private val service: CaseService,
+    private val service: CaseUseCase,
 ) {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

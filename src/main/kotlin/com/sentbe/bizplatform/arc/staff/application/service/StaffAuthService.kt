@@ -3,7 +3,7 @@ package com.sentbe.bizplatform.arc.staff.application.service
 import com.sentbe.bizplatform.arc.staff.adapter.out.StaffRepository
 import com.sentbe.bizplatform.arc.staff.adapter.out.StaffSessionRepository
 import com.sentbe.bizplatform.arc.staff.application.domain.StaffSession
-import com.sentbe.bizplatform.arc.staff.application.port.input.StaffAuthUseCase
+import com.sentbe.bizplatform.arc.staff.application.port.`in`.StaffAuthUseCase
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service

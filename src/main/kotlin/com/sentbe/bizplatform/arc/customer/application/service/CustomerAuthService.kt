@@ -4,7 +4,7 @@ import com.sentbe.bizplatform.arc.customer.adapter.out.CustomerRepository
 import com.sentbe.bizplatform.arc.customer.adapter.out.CustomerSessionRepository
 import com.sentbe.bizplatform.arc.customer.application.domain.Customer
 import com.sentbe.bizplatform.arc.customer.application.domain.CustomerSession
-import com.sentbe.bizplatform.arc.customer.application.port.input.CustomerAuthUseCase
+import com.sentbe.bizplatform.arc.customer.application.port.`in`.CustomerAuthUseCase
 import com.sentbe.bizplatform.arc.global.auth.OtpSender
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.StringRedisTemplate

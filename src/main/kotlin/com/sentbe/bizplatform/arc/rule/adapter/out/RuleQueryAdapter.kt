@@ -3,7 +3,7 @@ package com.sentbe.bizplatform.arc.rule.adapter.out
 import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.arc.rule.application.domain.Question
 import com.sentbe.bizplatform.arc.rule.application.domain.Segment
-import com.sentbe.bizplatform.arc.rule.application.port.output.RuleQueryPort
+import com.sentbe.bizplatform.arc.rule.application.port.out.RuleQueryPort
 import org.springframework.stereotype.Component
 
 @Component

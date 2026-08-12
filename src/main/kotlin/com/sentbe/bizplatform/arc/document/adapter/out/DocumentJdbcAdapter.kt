@@ -4,6 +4,7 @@ import com.sentbe.bizplatform.arc.document.application.domain.Document
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentDetail
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentFile
 import com.sentbe.bizplatform.arc.document.application.domain.RevisionRequest
+import com.sentbe.bizplatform.arc.document.application.port.out.DocumentOutPort
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.sql.ResultSet
@@ -13,8 +14,8 @@ import java.util.UUID
 @Component
 class DocumentJdbcAdapter(
     private val jdbc: JdbcClient,
-) {
-    fun findById(id: UUID): Document? =
+) : DocumentOutPort {
+    override fun findById(id: UUID): Document? =
         jdbc
             .sql("SELECT * FROM document WHERE id = :id")
             .param("id", id)
@@ -22,7 +23,7 @@ class DocumentJdbcAdapter(
             .optional()
             .orElse(null)
 
-    fun findByCaseId(caseId: UUID): List<DocumentDetail> {
+    override fun findByCaseId(caseId: UUID): List<DocumentDetail> {
         val docs =
             jdbc
                 .sql("SELECT * FROM document WHERE case_id = :caseId ORDER BY type")
@@ -50,7 +51,7 @@ class DocumentJdbcAdapter(
         }
     }
 
-    fun updateStatus(
+    override fun updateStatus(
         id: UUID,
         status: String,
     ) {
@@ -61,14 +62,14 @@ class DocumentJdbcAdapter(
             .update()
     }
 
-    fun markPreviousFilesOld(documentId: UUID) {
+    override fun markPreviousFilesOld(documentId: UUID) {
         jdbc
             .sql("UPDATE document_file SET is_latest = false WHERE document_id = :documentId AND is_latest = true")
             .param("documentId", documentId)
             .update()
     }
 
-    fun insertFile(file: DocumentFile) {
+    override fun insertFile(file: DocumentFile) {
         jdbc
             .sql(
                 """INSERT INTO document_file
@@ -87,7 +88,7 @@ class DocumentJdbcAdapter(
             .update()
     }
 
-    fun insertRevisionRequest(revision: RevisionRequest) {
+    override fun insertRevisionRequest(revision: RevisionRequest) {
         jdbc
             .sql(
                 """INSERT INTO revision_request
@@ -101,14 +102,14 @@ class DocumentJdbcAdapter(
             .update()
     }
 
-    fun resolveOpenRevisions(documentId: UUID) {
+    override fun resolveOpenRevisions(documentId: UUID) {
         jdbc
             .sql("UPDATE revision_request SET resolved_at = now() WHERE document_id = :documentId AND resolved_at IS NULL")
             .param("documentId", documentId)
             .update()
     }
 
-    fun hasUnsubmittedRequiredDocs(caseId: UUID): Boolean {
+    override fun hasUnsubmittedRequiredDocs(caseId: UUID): Boolean {
         val count =
             jdbc
                 .sql(
@@ -119,7 +120,7 @@ class DocumentJdbcAdapter(
         return count > 0
     }
 
-    fun countOpenRevisionsByCaseId(caseId: UUID): Int =
+    override fun countOpenRevisionsByCaseId(caseId: UUID): Int =
         jdbc
             .sql(
                 """SELECT COUNT(*) FROM revision_request rr

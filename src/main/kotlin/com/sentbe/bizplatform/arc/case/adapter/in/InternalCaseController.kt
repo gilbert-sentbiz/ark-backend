@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.arc.case.adapter.input
+package com.sentbe.bizplatform.arc.case.adapter.`in`
 
-import com.sentbe.bizplatform.arc.case.application.service.CaseService
+import com.sentbe.bizplatform.arc.case.application.port.`in`.CaseUseCase
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -19,7 +19,7 @@ data class CloseBody(
 @RestController
 @RequestMapping("/internal/cases")
 class InternalCaseController(
-    private val service: CaseService,
+    private val service: CaseUseCase,
 ) {
     @GetMapping
     fun getCases(): List<Map<String, Any>> {

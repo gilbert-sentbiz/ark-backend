@@ -1,11 +1,12 @@
 package com.sentbe.bizplatform.arc.document.application.service
 
-import com.sentbe.bizplatform.arc.case.adapter.out.CaseJdbcAdapter
 import com.sentbe.bizplatform.arc.case.application.domain.CaseStatus
-import com.sentbe.bizplatform.arc.document.adapter.out.DocumentJdbcAdapter
+import com.sentbe.bizplatform.arc.case.application.port.out.CaseOutPort
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentDetail
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentFile
 import com.sentbe.bizplatform.arc.document.application.domain.RevisionRequest
+import com.sentbe.bizplatform.arc.document.application.port.`in`.DocumentUseCase
+import com.sentbe.bizplatform.arc.document.application.port.out.DocumentOutPort
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedCustomer
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedStaff
 import org.springframework.http.HttpStatus
@@ -21,17 +22,17 @@ private const val MAX_SIZE_BYTES = 10 * 1024 * 1024
 
 @Service
 class DocumentService(
-    private val adapter: DocumentJdbcAdapter,
+    private val adapter: DocumentOutPort,
     private val storage: S3StorageService,
-    private val caseAdapter: CaseJdbcAdapter,
-) {
-    fun getDocuments(
+    private val casePort: CaseOutPort,
+) : DocumentUseCase {
+    override fun getDocuments(
         caseId: UUID,
         customer: AuthenticatedCustomer,
     ): List<DocumentDetail> = adapter.findByCaseId(caseId)
 
     @Transactional
-    fun uploadFile(
+    override fun uploadFile(
         documentId: UUID,
         file: MultipartFile,
         customer: AuthenticatedCustomer,
@@ -68,28 +69,28 @@ class DocumentService(
         if (wasRevisionRequired) {
             adapter.resolveOpenRevisions(documentId)
             if (adapter.countOpenRevisionsByCaseId(caseId) == 0) {
-                val currentCase = caseAdapter.findById(caseId)
+                val currentCase = casePort.findById(caseId)
                 val returnTo = currentCase?.revisionRequestedFrom
                 if (currentCase?.status == CaseStatus.REVISION_REQUESTED && returnTo != null) {
-                    caseAdapter.save(currentCase.copy(status = returnTo, revisionRequestedFrom = null))
+                    casePort.save(currentCase.copy(status = returnTo, revisionRequestedFrom = null))
                 }
             }
         }
 
         adapter.updateStatus(documentId, "SUBMITTED")
 
-        val currentCase = caseAdapter.findById(caseId)
+        val currentCase = casePort.findById(caseId)
         if (currentCase?.status == CaseStatus.DOCUMENT_SUBMISSION_REQUIRED &&
             !adapter.hasUnsubmittedRequiredDocs(caseId)
         ) {
-            caseAdapter.save(currentCase.copy(status = CaseStatus.INITIAL_SCREENING))
+            casePort.save(currentCase.copy(status = CaseStatus.INITIAL_SCREENING))
         }
 
         return adapter.findByCaseId(caseId).first { it.document.id == documentId }
     }
 
     @Transactional
-    fun requestRevision(
+    override fun requestRevision(
         documentId: UUID,
         staff: AuthenticatedStaff,
         reason: String,
@@ -104,7 +105,7 @@ class DocumentService(
         }
 
         val case =
-            caseAdapter.findById(doc.caseId)
+            casePort.findById(doc.caseId)
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
         if (case.status in setOf(CaseStatus.COMPLETED, CaseStatus.CLOSED)) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "종료된 케이스의 서류는 반려할 수 없습니다")
@@ -131,7 +132,7 @@ class DocumentService(
         adapter.updateStatus(documentId, "REVISION_REQUIRED")
 
         if (case.status != CaseStatus.REVISION_REQUESTED) {
-            caseAdapter.save(
+            casePort.save(
                 case.copy(
                     status = CaseStatus.REVISION_REQUESTED,
                     revisionRequestedFrom = case.status,
@@ -143,7 +144,7 @@ class DocumentService(
     }
 
     @Transactional
-    fun approveDocument(
+    override fun approveDocument(
         documentId: UUID,
         staff: AuthenticatedStaff,
     ): DocumentDetail {
