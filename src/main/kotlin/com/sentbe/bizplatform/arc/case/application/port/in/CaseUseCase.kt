@@ -43,4 +43,14 @@ interface CaseUseCase {
     fun getCaseTimeline(caseId: UUID): List<Map<String, Any>>
 
     fun getAllCases(): List<OnboardingCase>
+
+    fun getIntake(
+        caseId: UUID,
+        phase: String,
+    ): IntakeResponse?
+
+    fun resubmit(
+        caseId: UUID,
+        customerId: UUID,
+    ): OnboardingCase
 }

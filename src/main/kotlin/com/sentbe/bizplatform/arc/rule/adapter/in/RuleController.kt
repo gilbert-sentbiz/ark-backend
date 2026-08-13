@@ -1,13 +1,16 @@
 package com.sentbe.bizplatform.arc.rule.adapter.`in`
 
+import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.arc.rule.application.domain.Question
 import com.sentbe.bizplatform.arc.rule.application.domain.Segment
 import com.sentbe.bizplatform.arc.rule.application.service.RuleQueryService
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 data class SegmentDto(
@@ -60,6 +63,9 @@ class RuleController(
     fun getActive(
         @RequestParam(required = false) segment: String?,
     ): ActiveRulesResponse {
+        if (AuthContext.customer == null && AuthContext.staff == null) {
+            throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다")
+        }
         val rules = service.getActiveRules(segment)
         return ActiveRulesResponse(
             segments = rules.segments.map { it.toDto() },

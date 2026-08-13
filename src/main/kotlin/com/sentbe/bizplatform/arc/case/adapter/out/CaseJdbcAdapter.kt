@@ -178,6 +178,16 @@ class CaseJdbcAdapter(
         }
     }
 
+    override fun countOpenRevisionsByCaseId(caseId: UUID): Int =
+        jdbc
+            .sql(
+                """SELECT COUNT(*) FROM revision_request rr
+               JOIN document d ON rr.document_id = d.id
+               WHERE d.case_id = :caseId AND rr.resolved_at IS NULL""",
+            ).param("caseId", caseId)
+            .query(Int::class.java)
+            .single()
+
     private fun ResultSet.toCase(): OnboardingCase {
         val servicesArray = getArray("services")
         val sectorsArray = getArray("sectors")

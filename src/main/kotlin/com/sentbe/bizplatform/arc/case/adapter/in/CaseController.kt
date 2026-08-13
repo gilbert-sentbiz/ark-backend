@@ -95,6 +95,41 @@ class CaseController(
         return caseToMap(case)
     }
 
+    @GetMapping("/{id}/intake/{phase}")
+    fun getIntake(
+        @PathVariable id: UUID,
+        @PathVariable phase: String,
+    ): Map<String, Any> {
+        val customer =
+            AuthContext.customer
+                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+        val case = service.getCase(id)
+        if (case.customerId != customer.id) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다")
+        }
+        val intake =
+            service.getIntake(id, phase)
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "인테이크 응답을 찾을 수 없습니다")
+        return mapOf(
+            "phase" to intake.phase,
+            "status" to intake.status,
+            "answers" to intake.answers,
+            "savedAt" to intake.savedAt,
+            "submittedAt" to (intake.submittedAt ?: ""),
+        )
+    }
+
+    @PostMapping("/{id}/resubmit")
+    fun resubmit(
+        @PathVariable id: UUID,
+    ): Map<String, Any> {
+        val customer =
+            AuthContext.customer
+                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+        val case = service.resubmit(id, customer.id)
+        return caseToMap(case)
+    }
+
     private fun caseToMap(case: com.sentbe.bizplatform.arc.case.application.domain.OnboardingCase): Map<String, Any> =
         mapOf(
             "id" to case.id,

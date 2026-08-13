@@ -10,7 +10,7 @@ import com.sentbe.bizplatform.arc.global.event.Actor
 import com.sentbe.bizplatform.arc.global.event.ActorType
 import com.sentbe.bizplatform.arc.global.event.CaseEventAppender
 import com.sentbe.bizplatform.arc.global.event.EventType
-import com.sentbe.bizplatform.arc.rule.application.service.RuleQueryService
+import com.sentbe.bizplatform.arc.rule.application.port.out.RulePort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +20,7 @@ import java.util.UUID
 @Service
 class CaseService(
     private val adapter: CaseOutPort,
-    private val ruleService: RuleQueryService,
+    private val rulePort: RulePort,
     private val classificationService: ClassificationService,
     private val eventAppender: CaseEventAppender,
 ) : CaseUseCase {
@@ -31,7 +31,7 @@ class CaseService(
             throw ResponseStatusException(HttpStatus.CONFLICT, "진행 중인 케이스가 이미 있습니다")
         }
 
-        val allRules = ruleService.getActiveRules(null)
+        val allRules = rulePort.getActiveRules(null)
         val firstQuestionIds =
             allRules.questions
                 .filter { it.phase == "first" }
@@ -89,13 +89,13 @@ class CaseService(
                 .copy(answers = answers, status = "submitted", submittedAt = java.time.OffsetDateTime.now())
         adapter.saveIntake(intake)
 
-        val allRules = ruleService.getActiveRules(null)
+        val allRules = rulePort.getActiveRules(null)
         val matchedSegments = classificationService.classify(answers, allRules.segments)
 
         val secondQuestionIds =
             matchedSegments
                 .flatMap { seg ->
-                    ruleService
+                    rulePort
                         .getActiveRules(seg.code)
                         .questions
                         .filter { it.phase == "second" }
@@ -224,6 +224,39 @@ class CaseService(
 
     override fun getAllCases(): List<OnboardingCase> = adapter.findAllForDashboard()
 
+    override fun getIntake(
+        caseId: UUID,
+        phase: String,
+    ): IntakeResponse? = adapter.findIntake(caseId, phase)
+
+    @Transactional
+    override fun resubmit(
+        caseId: UUID,
+        customerId: UUID,
+    ): OnboardingCase {
+        val case = requireCase(caseId)
+        requireCustomerOwns(case, customerId)
+        if (case.status != CaseStatus.REVISION_REQUESTED) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "보완 요청 중인 케이스가 아닙니다")
+        }
+        if (adapter.countOpenRevisionsByCaseId(caseId) > 0) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "미해결 보완 요청이 남아 있습니다")
+        }
+        val returnTo =
+            case.revisionRequestedFrom
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "복귀 상태 정보가 없습니다")
+
+        val updated = case.copy(status = returnTo, revisionRequestedFrom = null)
+        val saved = adapter.save(updated)
+        eventAppender.append(
+            caseId = caseId,
+            eventType = EventType.CASE_STATUS_CHANGED,
+            actor = Actor(ActorType.CUSTOMER, customerId),
+            payload = mapOf("from" to CaseStatus.REVISION_REQUESTED, "to" to returnTo, "event" to "resubmitted"),
+        )
+        return saved
+    }
+
     private fun requireCase(caseId: UUID): OnboardingCase =
         adapter.findById(caseId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
 
@@ -254,11 +287,11 @@ class CaseService(
 
         val docTemplates =
             if (segmentCodes.isEmpty()) {
-                ruleService.getActiveRules(null).docTemplates
+                rulePort.getActiveRules(null).docTemplates
             } else {
                 segmentCodes
                     .flatMap { code ->
-                        ruleService.getActiveRules(code).docTemplates
+                        rulePort.getActiveRules(code).docTemplates
                     }.distinctBy { it.type }
             }
 

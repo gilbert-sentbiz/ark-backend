@@ -27,4 +27,6 @@ interface DocumentOutPort {
     fun hasUnsubmittedRequiredDocs(caseId: UUID): Boolean
 
     fun countOpenRevisionsByCaseId(caseId: UUID): Int
+
+    fun hasLatestFile(documentId: UUID): Boolean
 }

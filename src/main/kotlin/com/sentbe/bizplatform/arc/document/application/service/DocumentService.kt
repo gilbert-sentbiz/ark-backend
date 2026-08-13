@@ -38,6 +38,9 @@ class DocumentService(
         customer: AuthenticatedCustomer,
     ): DocumentDetail {
         val doc = requireDocument(documentId)
+        if (adapter.hasLatestFile(documentId)) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "이미 업로드된 파일이 있습니다. MVP는 서류당 1파일만 허용됩니다.")
+        }
         if (doc.status !in setOf("REQUESTED", "REVISION_REQUIRED")) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "이 상태에서는 파일을 업로드할 수 없습니다: ${doc.status}")
         }

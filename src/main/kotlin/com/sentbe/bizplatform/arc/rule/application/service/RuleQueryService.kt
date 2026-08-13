@@ -1,22 +1,18 @@
 package com.sentbe.bizplatform.arc.rule.application.service
 
+import com.sentbe.bizplatform.arc.rule.application.domain.ActiveRules
 import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.arc.rule.application.domain.Question
 import com.sentbe.bizplatform.arc.rule.application.domain.Segment
+import com.sentbe.bizplatform.arc.rule.application.port.out.RulePort
 import com.sentbe.bizplatform.arc.rule.application.port.out.RuleQueryPort
 import org.springframework.stereotype.Service
-
-data class ActiveRules(
-    val segments: List<Segment>,
-    val questions: List<Question>,
-    val docTemplates: List<DocTemplate>,
-)
 
 @Service
 class RuleQueryService(
     private val port: RuleQueryPort,
-) {
-    fun getActiveRules(segmentCode: String?): ActiveRules {
+) : RulePort {
+    override fun getActiveRules(segmentCode: String?): ActiveRules {
         val segments = port.findActiveSegments()
         val allQuestions = port.findActiveQuestions()
         val allDocs = port.findActiveDocTemplates()
@@ -49,7 +45,6 @@ class RuleQueryService(
 
         val overrides = segment.questionOverrides ?: return base
 
-        // Each override entry: {"code": "Q_CODE", "enabled": false} or {"code": "Q_CODE", "filterOptions": [...]}
         val overrideMap =
             overrides
                 .filterIsInstance<Map<*, *>>()

@@ -130,6 +130,16 @@ class DocumentJdbcAdapter(
             .query(Int::class.java)
             .single()
 
+    override fun hasLatestFile(documentId: UUID): Boolean {
+        val count =
+            jdbc
+                .sql("SELECT COUNT(*) FROM document_file WHERE document_id = :documentId AND is_latest = true")
+                .param("documentId", documentId)
+                .query(Int::class.java)
+                .single()
+        return count > 0
+    }
+
     private fun ResultSet.toDocument(): Document =
         Document(
             id = UUID.fromString(getString("id")),

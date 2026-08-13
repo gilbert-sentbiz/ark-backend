@@ -26,4 +26,6 @@ interface CaseOutPort {
         caseId: UUID,
         docTemplates: List<Pair<UUID, Map<String, Any>>>,
     )
+
+    fun countOpenRevisionsByCaseId(caseId: UUID): Int
 }

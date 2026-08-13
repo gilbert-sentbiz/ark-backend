@@ -1,10 +1,9 @@
 package com.sentbe.bizplatform.arc.customer.application.service
 
-import com.sentbe.bizplatform.arc.customer.adapter.out.CustomerRepository
-import com.sentbe.bizplatform.arc.customer.adapter.out.CustomerSessionRepository
 import com.sentbe.bizplatform.arc.customer.application.domain.Customer
 import com.sentbe.bizplatform.arc.customer.application.domain.CustomerSession
 import com.sentbe.bizplatform.arc.customer.application.port.`in`.CustomerAuthUseCase
+import com.sentbe.bizplatform.arc.customer.application.port.out.CustomerOutPort
 import com.sentbe.bizplatform.arc.global.auth.OtpSender
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -19,8 +18,7 @@ import java.util.UUID
 
 @Service
 class CustomerAuthService(
-    private val customerRepo: CustomerRepository,
-    private val sessionRepo: CustomerSessionRepository,
+    private val outPort: CustomerOutPort,
     private val redis: StringRedisTemplate,
     private val otpSender: OtpSender,
     @Value("\${arc.auth.otp-ttl-seconds:300}") private val otpTtlSeconds: Long,
@@ -47,11 +45,11 @@ class CustomerAuthService(
         redis.delete(otpKey(email))
 
         val customer =
-            customerRepo.findByEmail(email)
-                ?: customerRepo.save(Customer(email = email))
+            outPort.findByEmail(email)
+                ?: outPort.saveCustomer(Customer(email = email))
 
         val token = UUID.randomUUID().toString()
-        sessionRepo.save(
+        outPort.saveSession(
             CustomerSession(
                 customerId = customer.id!!,
                 token = token,
