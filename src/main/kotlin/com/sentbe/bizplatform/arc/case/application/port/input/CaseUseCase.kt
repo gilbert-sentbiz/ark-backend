@@ -1,4 +1,4 @@
-package com.sentbe.bizplatform.arc.case.application.port.`in`
+package com.sentbe.bizplatform.arc.case.application.port.input
 
 import com.sentbe.bizplatform.arc.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.arc.case.application.domain.OnboardingCase

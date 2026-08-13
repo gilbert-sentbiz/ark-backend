@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.arc.document.adapter.`in`
+package com.sentbe.bizplatform.arc.document.adapter.input
 
-import com.sentbe.bizplatform.arc.document.application.port.`in`.DocumentUseCase
+import com.sentbe.bizplatform.arc.document.application.port.input.DocumentUseCase
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PathVariable

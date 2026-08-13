@@ -1,4 +1,4 @@
-package com.sentbe.bizplatform.arc.rule.adapter.`in`
+package com.sentbe.bizplatform.arc.rule.adapter.input
 
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate

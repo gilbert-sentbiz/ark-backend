@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.arc.case.adapter.`in`
+package com.sentbe.bizplatform.arc.case.adapter.input
 
-import com.sentbe.bizplatform.arc.case.application.port.`in`.CaseUseCase
+import com.sentbe.bizplatform.arc.case.application.port.input.CaseUseCase
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping

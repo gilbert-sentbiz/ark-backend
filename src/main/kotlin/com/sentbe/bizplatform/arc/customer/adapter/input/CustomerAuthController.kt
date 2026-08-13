@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.arc.customer.adapter.`in`
+package com.sentbe.bizplatform.arc.customer.adapter.input
 
-import com.sentbe.bizplatform.arc.customer.application.port.`in`.CustomerAuthUseCase
+import com.sentbe.bizplatform.arc.customer.application.port.input.CustomerAuthUseCase
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

@@ -1,4 +1,4 @@
-package com.sentbe.bizplatform.arc.document.application.port.`in`
+package com.sentbe.bizplatform.arc.document.application.port.input
 
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentDetail
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedCustomer

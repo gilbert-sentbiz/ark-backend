@@ -5,7 +5,7 @@ import com.sentbe.bizplatform.arc.case.application.port.out.CaseOutPort
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentDetail
 import com.sentbe.bizplatform.arc.document.application.domain.DocumentFile
 import com.sentbe.bizplatform.arc.document.application.domain.RevisionRequest
-import com.sentbe.bizplatform.arc.document.application.port.`in`.DocumentUseCase
+import com.sentbe.bizplatform.arc.document.application.port.input.DocumentUseCase
 import com.sentbe.bizplatform.arc.document.application.port.out.DocumentOutPort
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedCustomer
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedStaff

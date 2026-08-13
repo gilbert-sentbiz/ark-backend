@@ -1,7 +1,7 @@
 package com.sentbe.bizplatform.arc.case
 
 import com.sentbe.bizplatform.arc.case.application.domain.CaseStatus
-import com.sentbe.bizplatform.arc.case.application.port.`in`.CaseUseCase
+import com.sentbe.bizplatform.arc.case.application.port.input.CaseUseCase
 import com.sentbe.bizplatform.arc.document.application.service.S3StorageService
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedStaff
 import com.sentbe.bizplatform.arc.support.ArcTestContainerInitializer

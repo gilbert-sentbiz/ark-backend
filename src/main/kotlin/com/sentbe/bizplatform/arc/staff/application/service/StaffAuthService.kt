@@ -1,7 +1,7 @@
 package com.sentbe.bizplatform.arc.staff.application.service
 
 import com.sentbe.bizplatform.arc.staff.application.domain.StaffSession
-import com.sentbe.bizplatform.arc.staff.application.port.`in`.StaffAuthUseCase
+import com.sentbe.bizplatform.arc.staff.application.port.input.StaffAuthUseCase
 import com.sentbe.bizplatform.arc.staff.application.port.out.StaffOutPort
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus

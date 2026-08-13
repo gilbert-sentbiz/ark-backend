@@ -1,7 +1,7 @@
 package com.sentbe.bizplatform.arc.document
 
 import com.sentbe.bizplatform.arc.case.application.domain.CaseStatus
-import com.sentbe.bizplatform.arc.document.application.port.`in`.DocumentUseCase
+import com.sentbe.bizplatform.arc.document.application.port.input.DocumentUseCase
 import com.sentbe.bizplatform.arc.document.application.service.S3StorageService
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedCustomer
 import com.sentbe.bizplatform.arc.global.auth.AuthenticatedStaff
