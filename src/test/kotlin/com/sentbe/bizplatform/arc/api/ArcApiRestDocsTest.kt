@@ -5,9 +5,9 @@ import com.sentbe.bizplatform.arc.document.application.service.S3StorageService
 import com.sentbe.bizplatform.arc.global.auth.CustomerAuthFilter
 import com.sentbe.bizplatform.arc.global.auth.StaffAuthFilter
 import com.sentbe.bizplatform.arc.support.ArcTestContainerInitializer
-import jakarta.servlet.Filter
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import jakarta.servlet.Filter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.servlet.FilterRegistrationBean
@@ -45,10 +45,10 @@ class ArcApiRestDocsTest : DescribeSpec() {
     @Autowired
     lateinit var staffAuthFilterReg: FilterRegistrationBean<StaffAuthFilter>
 
-    private val CUST_ID = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
-    private val CUST_TOKEN = "test-customer-restdocs-token"
-    private val SALES_ID = UUID.fromString("00000001-0001-0000-0000-000000000000")
-    private val SALES_TOKEN = "test-sales-restdocs-token"
+    private val custId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    private val custToken = "test-customer-restdocs-token"
+    private val salesId = UUID.fromString("00000001-0001-0000-0000-000000000000")
+    private val salesToken = "test-sales-restdocs-token"
 
     private val restDocumentation = ManualRestDocumentation()
     private lateinit var docsMvc: MockMvc
@@ -59,9 +59,10 @@ class ArcApiRestDocsTest : DescribeSpec() {
             val builder = MockMvcBuilders.webAppContextSetup(wac)
             builder.addFilter<DefaultMockMvcBuilder>(customerAuthFilterReg.filter!! as Filter, "/*")
             builder.addFilter<DefaultMockMvcBuilder>(staffAuthFilterReg.filter!! as Filter, "/internal/*")
-            docsMvc = builder
-                .apply<DefaultMockMvcBuilder>(documentationConfiguration(restDocumentation))
-                .build()
+            docsMvc =
+                builder
+                    .apply<DefaultMockMvcBuilder>(documentationConfiguration(restDocumentation))
+                    .build()
         }
 
         beforeEach {
@@ -76,11 +77,12 @@ class ArcApiRestDocsTest : DescribeSpec() {
 
         describe("GET /actuator/health") {
             it("200 OK를 반환한다") {
-                val result = docsMvc
-                    .perform(MockMvcRequestBuilders.get("/actuator/health"))
-                    .andExpect(MockMvcResultMatchers.status().isOk)
-                    .andDo(MockMvcRestDocumentation.document("health-get"))
-                    .andReturn()
+                val result =
+                    docsMvc
+                        .perform(MockMvcRequestBuilders.get("/actuator/health"))
+                        .andExpect(MockMvcResultMatchers.status().isOk)
+                        .andDo(MockMvcRestDocumentation.document("health-get"))
+                        .andReturn()
 
                 result.response.status shouldBe 200
             }
@@ -90,8 +92,9 @@ class ArcApiRestDocsTest : DescribeSpec() {
             it("인증된 고객에게 활성 규칙을 반환한다") {
                 docsMvc
                     .perform(
-                        MockMvcRequestBuilders.get("/rules/active")
-                            .header("Authorization", "Bearer $CUST_TOKEN"),
+                        MockMvcRequestBuilders
+                            .get("/rules/active")
+                            .header("Authorization", "Bearer $custToken"),
                     ).andExpect(MockMvcResultMatchers.status().isOk)
                     .andDo(MockMvcRestDocumentation.document("rules-get-active"))
             }
@@ -108,8 +111,9 @@ class ArcApiRestDocsTest : DescribeSpec() {
             it("고객 인증으로 케이스를 생성하고 201을 반환한다") {
                 docsMvc
                     .perform(
-                        MockMvcRequestBuilders.post("/cases")
-                            .header("Authorization", "Bearer $CUST_TOKEN"),
+                        MockMvcRequestBuilders
+                            .post("/cases")
+                            .header("Authorization", "Bearer $custToken"),
                     ).andExpect(MockMvcResultMatchers.status().isCreated)
                     .andDo(MockMvcRestDocumentation.document("cases-create"))
             }
@@ -119,8 +123,9 @@ class ArcApiRestDocsTest : DescribeSpec() {
             it("직원 인증으로 전체 케이스 목록을 반환한다") {
                 docsMvc
                     .perform(
-                        MockMvcRequestBuilders.get("/internal/cases")
-                            .header("Authorization", "Bearer $SALES_TOKEN"),
+                        MockMvcRequestBuilders
+                            .get("/internal/cases")
+                            .header("Authorization", "Bearer $salesToken"),
                     ).andExpect(MockMvcResultMatchers.status().isOk)
                     .andDo(MockMvcRestDocumentation.document("internal-cases-list"))
             }
@@ -131,8 +136,9 @@ class ArcApiRestDocsTest : DescribeSpec() {
                 val caseId = insertCaseForSales()
                 docsMvc
                     .perform(
-                        MockMvcRequestBuilders.post("/internal/cases/$caseId/advance")
-                            .header("Authorization", "Bearer $SALES_TOKEN"),
+                        MockMvcRequestBuilders
+                            .post("/internal/cases/$caseId/advance")
+                            .header("Authorization", "Bearer $salesToken"),
                     ).andExpect(MockMvcResultMatchers.status().isOk)
                     .andDo(MockMvcRestDocumentation.document("internal-case-advance"))
             }
@@ -153,28 +159,38 @@ class ArcApiRestDocsTest : DescribeSpec() {
     }
 
     private fun insertCustomerSession() {
-        jdbc.sql("INSERT INTO customer (id, email) VALUES (:id, :email)")
-            .param("id", CUST_ID).param("email", "restdocs@test.com").update()
-        jdbc.sql(
-            "INSERT INTO customer_session (customer_id, token, expires_at) VALUES (:custId, :token, now() + interval '72 hours')",
-        ).param("custId", CUST_ID).param("token", CUST_TOKEN).update()
+        jdbc
+            .sql("INSERT INTO customer (id, email) VALUES (:id, :email)")
+            .param("id", custId)
+            .param("email", "restdocs@test.com")
+            .update()
+        jdbc
+            .sql(
+                "INSERT INTO customer_session (customer_id, token, expires_at) VALUES (:custId, :token, now() + interval '72 hours')",
+            ).param("custId", custId)
+            .param("token", custToken)
+            .update()
     }
 
     private fun insertStaffSession() {
-        jdbc.sql(
-            "INSERT INTO staff_session (staff_id, token, expires_at) VALUES (:staffId, :token, now() + interval '8 hours')",
-        ).param("staffId", SALES_ID).param("token", SALES_TOKEN).update()
+        jdbc
+            .sql(
+                "INSERT INTO staff_session (staff_id, token, expires_at) VALUES (:staffId, :token, now() + interval '8 hours')",
+            ).param("staffId", salesId)
+            .param("token", salesToken)
+            .update()
     }
 
     private fun insertCaseForSales(): UUID {
         val caseId = UUID.randomUUID()
-        jdbc.sql(
-            """INSERT INTO onboarding_case
+        jdbc
+            .sql(
+                """INSERT INTO onboarding_case
                (id, customer_id, status, services, sectors, segment_meta, pinned_question_ids)
                VALUES (:id, :custId, :status,
                        ARRAY[]::text[], ARRAY[]::text[], '{}'::jsonb, '{}'::jsonb)""",
-        ).param("id", caseId)
-            .param("custId", CUST_ID)
+            ).param("id", caseId)
+            .param("custId", custId)
             .param("status", CaseStatus.INITIAL_SCREENING)
             .update()
         return caseId

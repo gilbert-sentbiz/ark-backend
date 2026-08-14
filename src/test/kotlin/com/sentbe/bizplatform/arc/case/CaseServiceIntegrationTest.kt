@@ -34,21 +34,24 @@ class CaseServiceIntegrationTest : DescribeSpec() {
     @Autowired
     lateinit var jdbc: JdbcClient
 
-    private val SALES = AuthenticatedStaff(
-        id = UUID.fromString("00000001-0001-0000-0000-000000000000"),
-        email = "sales@sentbe.com",
-        role = "SALES",
-    )
-    private val OPS = AuthenticatedStaff(
-        id = UUID.fromString("00000002-0001-0000-0000-000000000000"),
-        email = "ops@sentbe.com",
-        role = "OPS",
-    )
-    private val COMPLIANCE = AuthenticatedStaff(
-        id = UUID.fromString("00000003-0001-0000-0000-000000000000"),
-        email = "compliance@sentbe.com",
-        role = "COMPLIANCE",
-    )
+    private val salesStaff =
+        AuthenticatedStaff(
+            id = UUID.fromString("00000001-0001-0000-0000-000000000000"),
+            email = "sales@sentbe.com",
+            role = "SALES",
+        )
+    private val opsStaff =
+        AuthenticatedStaff(
+            id = UUID.fromString("00000002-0001-0000-0000-000000000000"),
+            email = "ops@sentbe.com",
+            role = "OPS",
+        )
+    private val complianceStaff =
+        AuthenticatedStaff(
+            id = UUID.fromString("00000003-0001-0000-0000-000000000000"),
+            email = "compliance@sentbe.com",
+            role = "COMPLIANCE",
+        )
 
     init {
         beforeEach { cleanup() }
@@ -68,9 +71,10 @@ class CaseServiceIntegrationTest : DescribeSpec() {
                 val customerId = insertCustomer()
                 caseUseCase.createCase(customerId)
 
-                val ex = shouldThrow<ResponseStatusException> {
-                    caseUseCase.createCase(customerId)
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        caseUseCase.createCase(customerId)
+                    }
                 ex.statusCode shouldBe HttpStatus.CONFLICT
             }
         }
@@ -85,7 +89,8 @@ class CaseServiceIntegrationTest : DescribeSpec() {
                 val targetId = pinned.first() as String
 
                 // 질문 비활성화 — getActiveRules()에서 제외됨
-                jdbc.sql("UPDATE question SET deactivated_at = now() WHERE id = :id::uuid")
+                jdbc
+                    .sql("UPDATE question SET deactivated_at = now() WHERE id = :id::uuid")
                     .param("id", targetId)
                     .update()
 
@@ -95,7 +100,8 @@ class CaseServiceIntegrationTest : DescribeSpec() {
                 reloadedPinned shouldContain targetId
 
                 // 롤백: 다른 테스트에 영향 없도록 비활성화 해제
-                jdbc.sql("UPDATE question SET deactivated_at = null WHERE id = :id::uuid")
+                jdbc
+                    .sql("UPDATE question SET deactivated_at = null WHERE id = :id::uuid")
                     .param("id", targetId)
                     .update()
             }
@@ -105,28 +111,31 @@ class CaseServiceIntegrationTest : DescribeSpec() {
             it("이미 제출된 상태에서 재제출하면 CONFLICT를 던진다") {
                 val customerId = insertCustomer()
                 val case = caseUseCase.createCase(customerId)
-                val answers = mapOf(
-                    "businessType" to "corporation",
-                    "foundingCountry" to "KR",
-                    "services" to listOf("remittance"),
-                )
+                val answers =
+                    mapOf(
+                        "businessType" to "corporation",
+                        "foundingCountry" to "KR",
+                        "services" to listOf("remittance"),
+                    )
 
                 caseUseCase.submitFirstIntake(case.id, customerId, answers)
 
-                val ex = shouldThrow<ResponseStatusException> {
-                    caseUseCase.submitFirstIntake(case.id, customerId, answers)
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        caseUseCase.submitFirstIntake(case.id, customerId, answers)
+                    }
                 ex.statusCode shouldBe HttpStatus.CONFLICT
             }
 
             it("1차 제출 후 2차 질문 ID가 pinnedQuestionIds[second]에 고정된다") {
                 val customerId = insertCustomer()
                 val case = caseUseCase.createCase(customerId)
-                val answers = mapOf(
-                    "businessType" to "corporation",
-                    "foundingCountry" to "KR",
-                    "services" to listOf("remittance"),
-                )
+                val answers =
+                    mapOf(
+                        "businessType" to "corporation",
+                        "foundingCountry" to "KR",
+                        "services" to listOf("remittance"),
+                    )
 
                 val updated = caseUseCase.submitFirstIntake(case.id, customerId, answers)
                 val secondPinned = updated.pinnedQuestionIds["second"] as? List<*>
@@ -138,32 +147,34 @@ class CaseServiceIntegrationTest : DescribeSpec() {
         describe("상태 전이 — advanceStatus") {
             it("SALES가 INITIAL_SCREENING → DOCUMENT_SCREENING_REQUIRED로 전진시킨다") {
                 val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
-                val advanced = caseUseCase.advanceStatus(caseId, SALES)
+                val advanced = caseUseCase.advanceStatus(caseId, salesStaff)
                 advanced.status shouldBe CaseStatus.DOCUMENT_SCREENING_REQUIRED
             }
 
             it("4단계 순차 전진이 COMPLETED로 이어진다") {
                 val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
-                caseUseCase.advanceStatus(caseId, SALES)
-                caseUseCase.advanceStatus(caseId, OPS)
-                caseUseCase.advanceStatus(caseId, COMPLIANCE)
-                val final = caseUseCase.advanceStatus(caseId, OPS)
+                caseUseCase.advanceStatus(caseId, salesStaff)
+                caseUseCase.advanceStatus(caseId, opsStaff)
+                caseUseCase.advanceStatus(caseId, complianceStaff)
+                val final = caseUseCase.advanceStatus(caseId, opsStaff)
                 final.status shouldBe CaseStatus.COMPLETED
             }
 
             it("역할이 맞지 않으면 FORBIDDEN을 던진다") {
                 val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
-                val ex = shouldThrow<ResponseStatusException> {
-                    caseUseCase.advanceStatus(caseId, OPS) // SALES 역할 필요
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        caseUseCase.advanceStatus(caseId, opsStaff) // SALES 역할 필요
+                    }
                 ex.statusCode shouldBe HttpStatus.FORBIDDEN
             }
 
             it("전진 불가 상태에서는 BAD_REQUEST를 던진다") {
                 val caseId = setupCaseWithStatus(CaseStatus.INQUIRY_RECEIVED)
-                val ex = shouldThrow<ResponseStatusException> {
-                    caseUseCase.advanceStatus(caseId, SALES)
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        caseUseCase.advanceStatus(caseId, salesStaff)
+                    }
                 ex.statusCode shouldBe HttpStatus.BAD_REQUEST
             }
         }
@@ -182,7 +193,7 @@ class CaseServiceIntegrationTest : DescribeSpec() {
                 val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
                 val before = caseUseCase.getCaseTimeline(caseId).size
 
-                caseUseCase.advanceStatus(caseId, SALES)
+                caseUseCase.advanceStatus(caseId, salesStaff)
 
                 val after = caseUseCase.getCaseTimeline(caseId)
                 after.size shouldBe before + 1
@@ -193,11 +204,12 @@ class CaseServiceIntegrationTest : DescribeSpec() {
         describe("케이스 재제출 — resubmit") {
             it("미해결 보완 요청이 없으면 REVISION_REQUESTED에서 원래 상태로 복귀한다") {
                 val customerId = insertCustomer()
-                val caseId = insertCaseWithStatus(
-                    customerId = customerId,
-                    status = CaseStatus.REVISION_REQUESTED,
-                    revisionRequestedFrom = CaseStatus.INITIAL_SCREENING,
-                )
+                val caseId =
+                    insertCaseWithStatus(
+                        customerId = customerId,
+                        status = CaseStatus.REVISION_REQUESTED,
+                        revisionRequestedFrom = CaseStatus.INITIAL_SCREENING,
+                    )
 
                 val result = caseUseCase.resubmit(caseId, customerId)
                 result.status shouldBe CaseStatus.INITIAL_SCREENING
@@ -207,9 +219,10 @@ class CaseServiceIntegrationTest : DescribeSpec() {
                 val customerId = insertCustomer()
                 val caseId = insertCaseWithStatus(customerId, CaseStatus.INITIAL_SCREENING)
 
-                val ex = shouldThrow<ResponseStatusException> {
-                    caseUseCase.resubmit(caseId, customerId)
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        caseUseCase.resubmit(caseId, customerId)
+                    }
                 ex.statusCode shouldBe HttpStatus.BAD_REQUEST
             }
         }
@@ -230,8 +243,11 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 
     private fun insertCustomer(email: String = "test@test.com"): UUID {
         val id = UUID.randomUUID()
-        jdbc.sql("INSERT INTO customer (id, email) VALUES (:id, :email)")
-            .param("id", id).param("email", email).update()
+        jdbc
+            .sql("INSERT INTO customer (id, email) VALUES (:id, :email)")
+            .param("id", id)
+            .param("email", email)
+            .update()
         return id
     }
 
@@ -246,12 +262,13 @@ class CaseServiceIntegrationTest : DescribeSpec() {
         revisionRequestedFrom: String? = null,
     ): UUID {
         val caseId = UUID.randomUUID()
-        jdbc.sql(
-            """INSERT INTO onboarding_case
+        jdbc
+            .sql(
+                """INSERT INTO onboarding_case
                (id, customer_id, status, revision_requested_from, services, sectors, segment_meta, pinned_question_ids)
                VALUES (:id, :custId, :status, :revFrom,
                        ARRAY[]::text[], ARRAY[]::text[], '{}'::jsonb, '{}'::jsonb)""",
-        ).param("id", caseId)
+            ).param("id", caseId)
             .param("custId", customerId)
             .param("status", status)
             .param("revFrom", revisionRequestedFrom)

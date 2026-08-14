@@ -33,12 +33,13 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
     @Autowired
     lateinit var jdbc: JdbcClient
 
-    private val DOC_TEMPLATE_ID = UUID.fromString("e0000001-0001-0000-0000-000000000000")
-    private val OPS = AuthenticatedStaff(
-        id = UUID.fromString("00000002-0001-0000-0000-000000000000"),
-        email = "ops@sentbe.com",
-        role = "OPS",
-    )
+    private val docTemplateId = UUID.fromString("e0000001-0001-0000-0000-000000000000")
+    private val opsStaff =
+        AuthenticatedStaff(
+            id = UUID.fromString("00000002-0001-0000-0000-000000000000"),
+            email = "ops@sentbe.com",
+            role = "OPS",
+        )
 
     init {
         beforeEach { cleanup() }
@@ -60,9 +61,10 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
 
                 documentUseCase.uploadFile(documentId, file, customer)
 
-                val ex = shouldThrow<ResponseStatusException> {
-                    documentUseCase.uploadFile(documentId, file, customer)
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        documentUseCase.uploadFile(documentId, file, customer)
+                    }
                 ex.statusCode shouldBe HttpStatus.CONFLICT
             }
 
@@ -71,9 +73,10 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
                 val customer = AuthenticatedCustomer(customerId, "cust@test.com")
                 val file = MockMultipartFile("file", "doc.pdf", "application/pdf", ByteArray(100))
 
-                val ex = shouldThrow<ResponseStatusException> {
-                    documentUseCase.uploadFile(documentId, file, customer)
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        documentUseCase.uploadFile(documentId, file, customer)
+                    }
                 ex.statusCode shouldBe HttpStatus.CONFLICT
             }
         }
@@ -84,9 +87,10 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
                 val customer = AuthenticatedCustomer(customerId, "cust@test.com")
                 val file = MockMultipartFile("file", "doc.exe", "application/octet-stream", ByteArray(100))
 
-                val ex = shouldThrow<ResponseStatusException> {
-                    documentUseCase.uploadFile(documentId, file, customer)
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        documentUseCase.uploadFile(documentId, file, customer)
+                    }
                 ex.statusCode shouldBe HttpStatus.BAD_REQUEST
             }
         }
@@ -94,7 +98,7 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
         describe("보완 요청 플로우 (PI-147)") {
             it("직원이 SUBMITTED 서류를 반려하면 REVISION_REQUIRED로 변경된다") {
                 val (_, documentId) = setupDocument("SUBMITTED")
-                val detail = documentUseCase.requestRevision(documentId, OPS, "서류 내용 불충분")
+                val detail = documentUseCase.requestRevision(documentId, opsStaff, "서류 내용 불충분")
                 detail.document.status shouldBe "REVISION_REQUIRED"
             }
 
@@ -109,9 +113,10 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
 
             it("사유 없이 반려하면 BAD_REQUEST를 던진다") {
                 val (_, documentId) = setupDocument("SUBMITTED")
-                val ex = shouldThrow<ResponseStatusException> {
-                    documentUseCase.requestRevision(documentId, OPS, "  ")
-                }
+                val ex =
+                    shouldThrow<ResponseStatusException> {
+                        documentUseCase.requestRevision(documentId, opsStaff, "  ")
+                    }
                 ex.statusCode shouldBe HttpStatus.BAD_REQUEST
             }
         }
@@ -135,39 +140,45 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
         withRevision: Boolean = false,
     ): Pair<UUID, UUID> {
         val customerId = UUID.randomUUID()
-        jdbc.sql("INSERT INTO customer (id, email) VALUES (:id, :email)")
-            .param("id", customerId).param("email", "cust@test.com").update()
+        jdbc
+            .sql("INSERT INTO customer (id, email) VALUES (:id, :email)")
+            .param("id", customerId)
+            .param("email", "cust@test.com")
+            .update()
 
         val caseId = UUID.randomUUID()
-        jdbc.sql(
-            """INSERT INTO onboarding_case
+        jdbc
+            .sql(
+                """INSERT INTO onboarding_case
                (id, customer_id, status, services, sectors, segment_meta, pinned_question_ids)
                VALUES (:id, :custId, :caseStatus,
                        ARRAY[]::text[], ARRAY[]::text[], '{}'::jsonb, '{}'::jsonb)""",
-        ).param("id", caseId)
+            ).param("id", caseId)
             .param("custId", customerId)
             .param("caseStatus", CaseStatus.INITIAL_SCREENING)
             .update()
 
         val documentId = UUID.randomUUID()
-        jdbc.sql(
-            """INSERT INTO document
+        jdbc
+            .sql(
+                """INSERT INTO document
                (id, case_id, doc_template_id, type, display_name, status, is_required, is_conditional)
                VALUES (:id, :caseId, :templateId, 'BIZ_REGISTRATION', '사업자등록증', :status, true, false)""",
-        ).param("id", documentId)
+            ).param("id", documentId)
             .param("caseId", caseId)
-            .param("templateId", DOC_TEMPLATE_ID)
+            .param("templateId", docTemplateId)
             .param("status", docStatus)
             .update()
 
         if (withRevision) {
-            jdbc.sql(
-                """INSERT INTO revision_request
+            jdbc
+                .sql(
+                    """INSERT INTO revision_request
                    (id, document_id, reason, requested_by_staff_id, requested_from_status)
                    VALUES (:id, :docId, '테스트 반려', :staffId, 'INITIAL_SCREENING')""",
-            ).param("id", UUID.randomUUID())
+                ).param("id", UUID.randomUUID())
                 .param("docId", documentId)
-                .param("staffId", OPS.id)
+                .param("staffId", opsStaff.id)
                 .update()
         }
 

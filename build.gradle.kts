@@ -60,7 +60,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.reactor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.postgresql)
-    implementation(libs.liquibase.core)
+    implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation(libs.aws.secretsmanager)
     implementation(libs.aws.s3)
     implementation(libs.springdoc.openapi.starter)
