@@ -5,6 +5,8 @@ import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.arc.rule.application.domain.Question
 import com.sentbe.bizplatform.arc.rule.application.domain.Segment
 import com.sentbe.bizplatform.arc.rule.application.port.input.RuleUseCase
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -54,11 +56,13 @@ data class ActiveRulesResponse(
     val docTemplates: List<DocTemplateDto>,
 )
 
+@Tag(name = "Rules", description = "룰 조회 API")
 @RestController
 @RequestMapping("/rules")
 class RuleController(
     private val service: RuleUseCase,
 ) {
+    @Operation(summary = "C13 활성 룰 조회")
     @GetMapping("/active")
     fun getActive(
         @RequestParam(required = false) segment: String?,
