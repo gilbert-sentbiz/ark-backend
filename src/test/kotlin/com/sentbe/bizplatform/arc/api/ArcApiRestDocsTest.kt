@@ -367,6 +367,41 @@ class ArcApiRestDocsTest : DescribeSpec() {
             }
         }
 
+        describe("GET /cases/{caseId}/documents") {
+            it("케이스 서류 목록을 반환하고 열린 보완만 노출한다 (PI-161 C9)") {
+                val caseId = insertInquiryCase()
+                val docId = insertDocumentForCase(caseId)
+                insertRevisionForDocument(docId, resolved = true)
+                insertRevisionForDocument(docId, resolved = false)
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$caseId/documents")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0].type").value("BIZ_REGISTRATION"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0].openRevisions.length()").value(1))
+                    .andDo(MockMvcRestDocumentation.document("cases-list-documents"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-161 C9)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(MockMvcRequestBuilders.get("/cases/$caseId/documents"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("타 고객 케이스는 403을 반환한다 (PI-161 C9)") {
+                val otherCaseId = insertCaseForDifferentCustomer()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$otherCaseId/documents")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isForbidden)
+            }
+        }
+
         describe("GET /internal/cases") {
             it("직원 인증으로 전체 케이스 목록을 반환한다") {
                 docsMvc
@@ -426,6 +461,33 @@ class ArcApiRestDocsTest : DescribeSpec() {
                 "INSERT INTO staff_session (staff_id, token, expires_at) VALUES (:staffId, :token, now() + interval '8 hours')",
             ).param("staffId", salesId)
             .param("token", salesToken)
+            .update()
+    }
+
+    private fun insertDocumentForCase(caseId: UUID): UUID {
+        val docId = UUID.randomUUID()
+        jdbc
+            .sql(
+                """INSERT INTO document (id, case_id, doc_template_id, type, display_name, status, is_required)
+               VALUES (:id, :caseId, 'e0000001-0001-0000-0000-000000000000'::uuid,
+                       'BIZ_REGISTRATION', '사업자등록증', 'REQUESTED', true)""",
+            ).param("id", docId)
+            .param("caseId", caseId)
+            .update()
+        return docId
+    }
+
+    private fun insertRevisionForDocument(
+        docId: UUID,
+        resolved: Boolean,
+    ) {
+        val resolvedAtExpr = if (resolved) "now()" else "null"
+        jdbc
+            .sql(
+                """INSERT INTO revision_request (document_id, reason, requested_by_staff_id, requested_from_status, resolved_at)
+               VALUES (:docId, 'Test reason', :staffId::uuid, 'DOCUMENT_SCREENING_REQUIRED', $resolvedAtExpr)""",
+            ).param("docId", docId)
+            .param("staffId", salesId.toString())
             .update()
     }
 

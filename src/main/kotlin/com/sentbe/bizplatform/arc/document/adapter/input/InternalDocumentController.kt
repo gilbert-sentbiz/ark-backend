@@ -2,6 +2,8 @@ package com.sentbe.bizplatform.arc.document.adapter.input
 
 import com.sentbe.bizplatform.arc.document.application.port.input.DocumentUseCase
 import com.sentbe.bizplatform.arc.global.auth.AuthContext
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -15,29 +17,32 @@ data class RevisionRequestBody(
     val reason: String,
 )
 
+@Tag(name = "Internal Document", description = "내부 서류 관리 API")
 @RestController
 @RequestMapping("/internal/documents")
 class InternalDocumentController(
     private val service: DocumentUseCase,
 ) {
+    @Operation(summary = "I5 서류 보완 요청")
     @PostMapping("/{id}/revision-requests")
     fun requestRevision(
         @PathVariable id: UUID,
         @RequestBody body: RevisionRequestBody,
-    ): Map<String, Any> {
+    ): DocumentResponse {
         val staff =
             AuthContext.staff
                 ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
-        return service.requestRevision(id, staff, body.reason).toMap()
+        return service.requestRevision(id, staff, body.reason).toResponse()
     }
 
+    @Operation(summary = "I6 서류 승인")
     @PostMapping("/{id}/approve")
     fun approve(
         @PathVariable id: UUID,
-    ): Map<String, Any> {
+    ): DocumentResponse {
         val staff =
             AuthContext.staff
                 ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
-        return service.approveDocument(id, staff).toMap()
+        return service.approveDocument(id, staff).toResponse()
     }
 }
