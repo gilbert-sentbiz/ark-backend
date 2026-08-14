@@ -27,6 +27,6 @@ class FilterConfig(
     fun staffAuthFilter(): FilterRegistrationBean<StaffAuthFilter> =
         FilterRegistrationBean(StaffAuthFilter(staffSessionRepo, staffRepo)).apply {
             order = Ordered.HIGHEST_PRECEDENCE + 20
-            addUrlPatterns("/internal/*")
+            addUrlPatterns("/internal/*", "/rules/*")
         }
 }

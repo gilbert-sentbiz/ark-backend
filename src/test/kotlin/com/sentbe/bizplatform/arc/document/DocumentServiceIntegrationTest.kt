@@ -111,6 +111,18 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
                 detail.document.status shouldBe "SUBMITTED"
             }
 
+            it("업로드된 파일이 있는 REVISION_REQUIRED 서류도 재업로드에 성공한다 (PI-143)") {
+                val (customerId, documentId) = setupDocument("REQUESTED")
+                val customer = AuthenticatedCustomer(customerId, "cust@test.com")
+                val file = MockMultipartFile("file", "doc.pdf", "application/pdf", ByteArray(100))
+
+                documentUseCase.uploadFile(documentId, file, customer)
+                documentUseCase.requestRevision(documentId, opsStaff, "내용 보완 필요")
+
+                val resubmit = documentUseCase.uploadFile(documentId, file, customer)
+                resubmit.document.status shouldBe "SUBMITTED"
+            }
+
             it("사유 없이 반려하면 BAD_REQUEST를 던진다") {
                 val (_, documentId) = setupDocument("SUBMITTED")
                 val ex =

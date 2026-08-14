@@ -14,7 +14,7 @@ class StaffAuthFilter(
 ) : OncePerRequestFilter() {
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
         val path = request.requestURI
-        return !path.startsWith("/internal/")
+        return !path.startsWith("/internal/") && !path.startsWith("/rules/")
     }
 
     override fun doFilterInternal(

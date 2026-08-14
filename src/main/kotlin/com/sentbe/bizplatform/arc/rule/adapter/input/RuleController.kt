@@ -4,7 +4,7 @@ import com.sentbe.bizplatform.arc.global.auth.AuthContext
 import com.sentbe.bizplatform.arc.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.arc.rule.application.domain.Question
 import com.sentbe.bizplatform.arc.rule.application.domain.Segment
-import com.sentbe.bizplatform.arc.rule.application.service.RuleQueryService
+import com.sentbe.bizplatform.arc.rule.application.port.input.RuleUseCase
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -57,7 +57,7 @@ data class ActiveRulesResponse(
 @RestController
 @RequestMapping("/rules")
 class RuleController(
-    private val service: RuleQueryService,
+    private val service: RuleUseCase,
 ) {
     @GetMapping("/active")
     fun getActive(
