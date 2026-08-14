@@ -336,6 +336,37 @@ class ArcApiRestDocsTest : DescribeSpec() {
             }
         }
 
+        describe("POST /cases/{id}/resubmit") {
+            it("보완 재제출 시 200 + revisionRequestedFrom 단계로 복귀된 CaseResponse를 반환한다 (PI-160 C8)") {
+                val caseId = insertRevisionCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/resubmit")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.status").value(CaseStatus.DOCUMENT_SCREENING_REQUIRED))
+                    .andDo(MockMvcRestDocumentation.document("cases-resubmit"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-160 C8)") {
+                val caseId = insertRevisionCase()
+                docsMvc
+                    .perform(MockMvcRequestBuilders.post("/cases/$caseId/resubmit"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("REVISION_REQUESTED 상태가 아닌 케이스에 재제출하면 400을 반환한다 (PI-160 C8)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/resubmit")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isBadRequest)
+            }
+        }
+
         describe("GET /internal/cases") {
             it("직원 인증으로 전체 케이스 목록을 반환한다") {
                 docsMvc
@@ -396,6 +427,22 @@ class ArcApiRestDocsTest : DescribeSpec() {
             ).param("staffId", salesId)
             .param("token", salesToken)
             .update()
+    }
+
+    private fun insertRevisionCase(): UUID {
+        val caseId = UUID.randomUUID()
+        jdbc
+            .sql(
+                """INSERT INTO onboarding_case
+               (id, customer_id, status, revision_requested_from, services, sectors, segment_meta, pinned_question_ids)
+               VALUES (:id, :custId, :status, :revFrom,
+                       ARRAY[]::text[], ARRAY[]::text[], '{}'::jsonb, '{}'::jsonb)""",
+            ).param("id", caseId)
+            .param("custId", custId)
+            .param("status", CaseStatus.REVISION_REQUESTED)
+            .param("revFrom", CaseStatus.DOCUMENT_SCREENING_REQUIRED)
+            .update()
+        return caseId
     }
 
     private fun insertSubmittedIntake(
