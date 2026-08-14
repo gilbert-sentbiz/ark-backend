@@ -108,6 +108,24 @@ class CaseServiceIntegrationTest : DescribeSpec() {
         }
 
         describe("1차 인테이크 제출 — 중복 제출 불변식") {
+            it("draft 임시저장 후 1차 제출에 성공한다 (PI-139)") {
+                val customerId = insertCustomer()
+                val case = caseUseCase.createCase(customerId)
+                val answers =
+                    mapOf(
+                        "businessType" to "corporation",
+                        "foundingCountry" to "KR",
+                        "services" to listOf("remittance"),
+                    )
+
+                caseUseCase.saveIntake(case.id, customerId, "first", answers)
+
+                val updated = caseUseCase.submitFirstIntake(case.id, customerId, answers)
+                val secondPinned = updated.pinnedQuestionIds["second"] as? List<*>
+                secondPinned shouldNotBe null
+                secondPinned!!.size shouldBeGreaterThan 0
+            }
+
             it("이미 제출된 상태에서 재제출하면 CONFLICT를 던진다") {
                 val customerId = insertCustomer()
                 val case = caseUseCase.createCase(customerId)

@@ -83,12 +83,13 @@ class CaseService(
         if (case.status != CaseStatus.INQUIRY_RECEIVED) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "1차 인테이크를 제출할 수 없는 상태입니다")
         }
-        if (adapter.findIntake(caseId, "first") != null) {
+        val existingIntake = adapter.findIntake(caseId, "first")
+        if (existingIntake?.status == "submitted") {
             throw ResponseStatusException(HttpStatus.CONFLICT, "1차 인테이크가 이미 제출되었습니다")
         }
 
         val intake =
-            IntakeResponse(caseId = caseId, phase = "first")
+            (existingIntake ?: IntakeResponse(caseId = caseId, phase = "first"))
                 .copy(answers = answers, status = "submitted", submittedAt = java.time.OffsetDateTime.now())
         adapter.saveIntake(intake)
 
