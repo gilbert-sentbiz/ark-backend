@@ -56,6 +56,8 @@ class ArcApiRestDocsTest : DescribeSpec() {
     private val custToken = "test-customer-restdocs-token"
     private val salesId = UUID.fromString("00000001-0001-0000-0000-000000000000")
     private val salesToken = "test-sales-restdocs-token"
+    private val complianceId = UUID.fromString("00000003-0001-0000-0000-000000000000")
+    private val complianceToken = "test-compliance-restdocs-token"
 
     private val restDocumentation = ManualRestDocumentation()
     private lateinit var docsMvc: MockMvc
@@ -610,6 +612,94 @@ class ArcApiRestDocsTest : DescribeSpec() {
                     ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
             }
         }
+
+        describe("POST /internal/documents/{id}/revision-requests") {
+            it("직원 인증으로 SUBMITTED 서류에 보완요청 시 200을 반환한다 (PI-170 I5)") {
+                val caseId = insertInquiryCase()
+                val docId = insertSubmittedDocument(caseId)
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/documents/$docId/revision-requests")
+                            .header("Authorization", "Bearer $salesToken")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"reason":"서류 보완 필요"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.openRevisions").isArray)
+                    .andDo(MockMvcRestDocumentation.document("internal-document-revision-request"))
+            }
+
+            it("body 없이 요청하면 400을 반환한다 (PI-170 I5)") {
+                val caseId = insertInquiryCase()
+                val docId = insertSubmittedDocument(caseId)
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/documents/$docId/revision-requests")
+                            .header("Authorization", "Bearer $salesToken")
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(MockMvcResultMatchers.status().isBadRequest)
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-170 I5)") {
+                val caseId = insertInquiryCase()
+                val docId = insertSubmittedDocument(caseId)
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/documents/$docId/revision-requests")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"reason":"테스트"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+        }
+
+        describe("POST /internal/documents/{id}/approve") {
+            it("SUBMITTED 서류 승인 시 200 + status APPROVED를 반환한다 (PI-171 I6)") {
+                val caseId = insertInquiryCase()
+                val docId = insertSubmittedDocument(caseId)
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/documents/$docId/approve")
+                            .header("Authorization", "Bearer $complianceToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.status").value("APPROVED"))
+                    .andDo(MockMvcRestDocumentation.document("internal-document-approve"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-171 I6)") {
+                val caseId = insertInquiryCase()
+                val docId = insertSubmittedDocument(caseId)
+                docsMvc
+                    .perform(MockMvcRequestBuilders.post("/internal/documents/$docId/approve"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+        }
+
+        describe("POST /internal/auth/mock-login") {
+            it("활성 직원 이메일로 로그인 시 200 + token을 반환한다 (PI-172 I7)") {
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/auth/mock-login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"email":"sales@sentbe.com"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.token").exists())
+                    .andDo(MockMvcRestDocumentation.document("internal-auth-mock-login"))
+            }
+
+            it("존재하지 않는 이메일로 로그인 시 401을 반환한다 (PI-172 I7)") {
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/auth/mock-login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"email":"unknown@sentbe.com"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+        }
     }
 
     private fun cleanupTestData() {
@@ -646,6 +736,12 @@ class ArcApiRestDocsTest : DescribeSpec() {
             ).param("staffId", salesId)
             .param("token", salesToken)
             .update()
+        jdbc
+            .sql(
+                "INSERT INTO staff_session (staff_id, token, expires_at) VALUES (:staffId, :token, now() + interval '8 hours')",
+            ).param("staffId", complianceId)
+            .param("token", complianceToken)
+            .update()
     }
 
     private fun insertDocumentForCase(caseId: UUID): UUID {
@@ -657,6 +753,25 @@ class ArcApiRestDocsTest : DescribeSpec() {
                        'BIZ_REGISTRATION', '사업자등록증', 'REQUESTED', true)""",
             ).param("id", docId)
             .param("caseId", caseId)
+            .update()
+        return docId
+    }
+
+    private fun insertSubmittedDocument(caseId: UUID): UUID {
+        val docId = UUID.randomUUID()
+        jdbc
+            .sql(
+                """INSERT INTO document (id, case_id, doc_template_id, type, display_name, status, is_required)
+               VALUES (:id, :caseId, 'e0000001-0001-0000-0000-000000000000'::uuid,
+                       'BIZ_REGISTRATION', '사업자등록증', 'SUBMITTED', true)""",
+            ).param("id", docId)
+            .param("caseId", caseId)
+            .update()
+        jdbc
+            .sql(
+                """INSERT INTO document_file (document_id, file_name, file_size, mime_type, storage_key, uploader_type)
+               VALUES (:docId, 'test.pdf', 1024, 'application/pdf', 'test/test.pdf', 'CUSTOMER')""",
+            ).param("docId", docId)
             .update()
         return docId
     }
