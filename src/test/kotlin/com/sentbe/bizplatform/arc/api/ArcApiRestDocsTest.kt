@@ -242,6 +242,56 @@ class ArcApiRestDocsTest : DescribeSpec() {
             }
         }
 
+        describe("POST /cases/{id}/intake/second/submit") {
+            val intakeBody = """{"answers":{"someField":"someValue"}}"""
+
+            it("2차 인테이크를 제출하면 200 + DOCUMENT_SUBMISSION_REQUIRED 상태가 되고 서류 목록이 생성된다 (PI-158 C6)") {
+                val caseId = insertClassifiedCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/intake/second/submit")
+                            .header("Authorization", "Bearer $custToken")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(intakeBody),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.status").value("DOCUMENT_SUBMISSION_REQUIRED"))
+                    .andDo(MockMvcRestDocumentation.document("cases-submit-second-intake"))
+                // 서류 목록 생성 확인
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$caseId/documents")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$").isArray)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0]").exists())
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-158 C6)") {
+                val caseId = insertClassifiedCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/intake/second/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(intakeBody),
+                    ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("1차 인테이크를 완료하지 않은 케이스에 제출하면 400을 반환한다 (PI-158 C6)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/intake/second/submit")
+                            .header("Authorization", "Bearer $custToken")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(intakeBody),
+                    ).andExpect(MockMvcResultMatchers.status().isBadRequest)
+            }
+        }
+
         describe("GET /internal/cases") {
             it("직원 인증으로 전체 케이스 목록을 반환한다") {
                 docsMvc
@@ -302,6 +352,25 @@ class ArcApiRestDocsTest : DescribeSpec() {
             ).param("staffId", salesId)
             .param("token", salesToken)
             .update()
+    }
+
+    private fun insertClassifiedCase(): UUID {
+        val caseId = UUID.randomUUID()
+        val segmentMeta =
+            """{"matchedSegments":[{"code":"ENTITY_CORP","label":"한국 법인"},{"code":"SVC_PAYOUT","label":"해외 송금"}]}"""
+        jdbc
+            .sql(
+                """INSERT INTO onboarding_case
+               (id, customer_id, status, entity_code, services, sectors, segment_meta, pinned_question_ids)
+               VALUES (:id, :custId, :status, :entityCode,
+                       ARRAY['SVC_PAYOUT']::text[], ARRAY[]::text[], :segmentMeta::jsonb, '{"first":[],"second":[]}'::jsonb)""",
+            ).param("id", caseId)
+            .param("custId", custId)
+            .param("status", CaseStatus.INQUIRY_RECEIVED)
+            .param("entityCode", "ENTITY_CORP")
+            .param("segmentMeta", segmentMeta)
+            .update()
+        return caseId
     }
 
     private fun insertInquiryCase(): UUID {
