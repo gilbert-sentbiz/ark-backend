@@ -11,6 +11,7 @@ import jakarta.servlet.Filter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.servlet.FilterRegistrationBean
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.mock.web.MockMultipartFile
@@ -26,6 +27,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
+import java.time.Duration
 import java.util.UUID
 
 @SpringBootTest
@@ -46,6 +48,9 @@ class ArcApiRestDocsTest : DescribeSpec() {
 
     @Autowired
     lateinit var staffAuthFilterReg: FilterRegistrationBean<StaffAuthFilter>
+
+    @Autowired
+    lateinit var redis: StringRedisTemplate
 
     private val custId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
     private val custToken = "test-customer-restdocs-token"
@@ -510,6 +515,44 @@ class ArcApiRestDocsTest : DescribeSpec() {
                             .post("/auth/otp/request")
                             .contentType(MediaType.APPLICATION_JSON),
                     ).andExpect(MockMvcResultMatchers.status().isBadRequest)
+            }
+        }
+
+        describe("POST /auth/otp/verify") {
+            it("올바른 OTP로 검증 시 200 + token을 반환한다 (PI-164 C12)") {
+                val email = "verify-ok@example.com"
+                redis.opsForValue().set("otp:$email", "123456", Duration.ofSeconds(300))
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/auth/otp/verify")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"email":"$email","code":"123456"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.token").exists())
+                    .andDo(MockMvcRestDocumentation.document("auth-otp-verify"))
+            }
+
+            it("잘못된 OTP로 검증 시 401을 반환한다 (PI-164 C12)") {
+                val email = "verify-wrong@example.com"
+                redis.opsForValue().set("otp:$email", "999999", Duration.ofSeconds(300))
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/auth/otp/verify")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"email":"$email","code":"000000"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("OTP 미발급 상태에서 검증 시 401을 반환한다 (PI-164 C12)") {
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/auth/otp/verify")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"email":"no-otp@example.com","code":"000000"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
             }
         }
     }
