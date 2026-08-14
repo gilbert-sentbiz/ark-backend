@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.restdocs.ManualRestDocumentation
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration
@@ -399,6 +400,68 @@ class ArcApiRestDocsTest : DescribeSpec() {
                             .get("/cases/$otherCaseId/documents")
                             .header("Authorization", "Bearer $custToken"),
                     ).andExpect(MockMvcResultMatchers.status().isForbidden)
+            }
+        }
+
+        describe("POST /cases/{caseId}/documents/{docId}/file") {
+            it("PDF 파일 업로드 시 200 + latestFile이 있는 DocumentResponse를 반환한다 (PI-162 C10)") {
+                val caseId = insertInquiryCase()
+                val docId = insertDocumentForCase(caseId)
+                val file = MockMultipartFile("file", "test.pdf", "application/pdf", ByteArray(100))
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .multipart("/cases/$caseId/documents/$docId/file")
+                            .file(file)
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.latestFile").exists())
+                    .andDo(MockMvcRestDocumentation.document("cases-upload-document-file"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-162 C10)") {
+                val caseId = insertInquiryCase()
+                val docId = insertDocumentForCase(caseId)
+                val file = MockMultipartFile("file", "test.pdf", "application/pdf", ByteArray(100))
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .multipart("/cases/$caseId/documents/$docId/file")
+                            .file(file),
+                    ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("허용되지 않은 파일 형식 업로드 시 400을 반환한다 (PI-162 C10)") {
+                val caseId = insertInquiryCase()
+                val docId = insertDocumentForCase(caseId)
+                val file = MockMultipartFile("file", "test.txt", "text/plain", ByteArray(100))
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .multipart("/cases/$caseId/documents/$docId/file")
+                            .file(file)
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isBadRequest)
+            }
+
+            it("이미 파일이 있는 서류에 재업로드하면 409를 반환한다 (PI-162 C10)") {
+                val caseId = insertInquiryCase()
+                val docId = insertDocumentForCase(caseId)
+                val file = MockMultipartFile("file", "test.pdf", "application/pdf", ByteArray(100))
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .multipart("/cases/$caseId/documents/$docId/file")
+                            .file(file)
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .multipart("/cases/$caseId/documents/$docId/file")
+                            .file(file)
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isConflict)
             }
         }
 
