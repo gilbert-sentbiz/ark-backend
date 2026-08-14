@@ -139,7 +139,7 @@ data class IntakeDto(
     val submittedAt: OffsetDateTime?,
 )
 
-private fun OnboardingCase.toResponse() =
+internal fun OnboardingCase.toResponse() =
     CaseResponse(
         id = id,
         status = status,

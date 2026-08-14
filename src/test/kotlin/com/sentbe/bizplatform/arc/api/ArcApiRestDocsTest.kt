@@ -471,7 +471,7 @@ class ArcApiRestDocsTest : DescribeSpec() {
         }
 
         describe("GET /internal/cases") {
-            it("직원 인증으로 전체 케이스 목록을 반환한다") {
+            it("직원 인증으로 전체 케이스 목록을 반환한다 (PI-166 I1)") {
                 docsMvc
                     .perform(
                         MockMvcRequestBuilders
@@ -480,10 +480,38 @@ class ArcApiRestDocsTest : DescribeSpec() {
                     ).andExpect(MockMvcResultMatchers.status().isOk)
                     .andDo(MockMvcRestDocumentation.document("internal-cases-list"))
             }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-166 I1)") {
+                docsMvc
+                    .perform(MockMvcRequestBuilders.get("/internal/cases"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+        }
+
+        describe("GET /internal/cases/{id}") {
+            it("직원 인증으로 케이스 상세+타임라인을 반환한다 (PI-167 I2)") {
+                val caseId = insertCaseForSales()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/internal/cases/$caseId")
+                            .header("Authorization", "Bearer $salesToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").exists())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.timeline").isArray)
+                    .andDo(MockMvcRestDocumentation.document("internal-case-detail"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-167 I2)") {
+                val caseId = insertCaseForSales()
+                docsMvc
+                    .perform(MockMvcRequestBuilders.get("/internal/cases/$caseId"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
         }
 
         describe("POST /internal/cases/{id}/advance") {
-            it("INITIAL_SCREENING 케이스를 SALES가 전진시키고 200을 반환한다") {
+            it("INITIAL_SCREENING 케이스를 SALES가 전진시키고 200을 반환한다 (PI-168 I3)") {
                 val caseId = insertCaseForSales()
                 docsMvc
                     .perform(
@@ -492,6 +520,33 @@ class ArcApiRestDocsTest : DescribeSpec() {
                             .header("Authorization", "Bearer $salesToken"),
                     ).andExpect(MockMvcResultMatchers.status().isOk)
                     .andDo(MockMvcRestDocumentation.document("internal-case-advance"))
+            }
+        }
+
+        describe("POST /internal/cases/{id}/close") {
+            it("INITIAL_SCREENING 케이스를 종료하고 200+CLOSED 상태를 반환한다 (PI-169 I4)") {
+                val caseId = insertCaseForSales()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/cases/$caseId/close")
+                            .header("Authorization", "Bearer $salesToken")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"reason":"DROPPED"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.status").value("CLOSED"))
+                    .andDo(MockMvcRestDocumentation.document("internal-case-close"))
+            }
+
+            it("사유 없이 종료 요청하면 400을 반환한다 (PI-169 I4)") {
+                val caseId = insertCaseForSales()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/internal/cases/$caseId/close")
+                            .header("Authorization", "Bearer $salesToken")
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(MockMvcResultMatchers.status().isBadRequest)
             }
         }
 
