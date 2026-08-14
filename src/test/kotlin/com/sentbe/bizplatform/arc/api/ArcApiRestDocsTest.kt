@@ -292,6 +292,50 @@ class ArcApiRestDocsTest : DescribeSpec() {
             }
         }
 
+        describe("GET /cases/{id}/intake/{phase}") {
+            it("제출된 1차 인테이크를 조회하면 200 + IntakeDto를 반환한다 (PI-159 C7)") {
+                val caseId = insertInquiryCase()
+                insertSubmittedIntake(caseId, "first")
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$caseId/intake/first")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.phase").value("first"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.status").value("submitted"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.answers").exists())
+                    .andDo(MockMvcRestDocumentation.document("cases-get-intake"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-159 C7)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(MockMvcRequestBuilders.get("/cases/$caseId/intake/first"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("타 고객 케이스는 403을 반환한다 (PI-159 C7)") {
+                val otherCaseId = insertCaseForDifferentCustomer()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$otherCaseId/intake/first")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isForbidden)
+            }
+
+            it("존재하지 않는 인테이크는 404를 반환한다 (PI-159 C7)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$caseId/intake/first")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isNotFound)
+            }
+        }
+
         describe("GET /internal/cases") {
             it("직원 인증으로 전체 케이스 목록을 반환한다") {
                 docsMvc
@@ -351,6 +395,19 @@ class ArcApiRestDocsTest : DescribeSpec() {
                 "INSERT INTO staff_session (staff_id, token, expires_at) VALUES (:staffId, :token, now() + interval '8 hours')",
             ).param("staffId", salesId)
             .param("token", salesToken)
+            .update()
+    }
+
+    private fun insertSubmittedIntake(
+        caseId: UUID,
+        phase: String = "first",
+    ) {
+        jdbc
+            .sql(
+                """INSERT INTO intake_response (case_id, phase, status, answers, submitted_at)
+               VALUES (:caseId, :phase, 'submitted', '{"businessType":"corporation"}'::jsonb, now())""",
+            ).param("caseId", caseId)
+            .param("phase", phase)
             .update()
     }
 
