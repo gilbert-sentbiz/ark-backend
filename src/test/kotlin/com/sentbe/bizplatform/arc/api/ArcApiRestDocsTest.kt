@@ -108,14 +108,42 @@ class ArcApiRestDocsTest : DescribeSpec() {
         }
 
         describe("POST /cases") {
-            it("고객 인증으로 케이스를 생성하고 201을 반환한다") {
+            it("고객 인증으로 케이스를 생성하고 201 + CaseResponse를 반환한다 (PI-153 C1)") {
                 docsMvc
                     .perform(
                         MockMvcRequestBuilders
                             .post("/cases")
                             .header("Authorization", "Bearer $custToken"),
                     ).andExpect(MockMvcResultMatchers.status().isCreated)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").exists())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.status").value("INQUIRY_RECEIVED"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.pinnedQuestionIds").exists())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.pinnedQuestionIds.first").isArray)
                     .andDo(MockMvcRestDocumentation.document("cases-create"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-153 C1)") {
+                docsMvc
+                    .perform(MockMvcRequestBuilders.post("/cases"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("이미 활성 케이스가 있으면 409를 반환한다 (PI-153 C1)") {
+                // 첫 번째 생성 성공
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isCreated)
+
+                // 동일 고객이 다시 생성 시도 → 409
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isConflict)
             }
         }
 
