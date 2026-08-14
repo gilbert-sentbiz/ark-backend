@@ -1,11 +1,11 @@
 package com.sentbe.bizplatform.arc.customer.adapter.input
 
 import com.sentbe.bizplatform.arc.customer.application.port.input.CustomerAuthUseCase
-import org.springframework.http.HttpStatus
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 data class OtpRequestBody(
@@ -17,23 +17,30 @@ data class OtpVerifyBody(
     val code: String,
 )
 
+data class OtpSentResponse(
+    val sent: Boolean = true,
+)
+
 data class TokenResponse(
     val token: String,
 )
 
+@Tag(name = "CustomerAuth", description = "고객 인증 API")
 @RestController
 @RequestMapping("/auth")
 class CustomerAuthController(
     private val useCase: CustomerAuthUseCase,
 ) {
+    @Operation(summary = "C11 OTP 코드 발급")
     @PostMapping("/otp/request")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun requestOtp(
         @RequestBody body: OtpRequestBody,
-    ) {
+    ): OtpSentResponse {
         useCase.requestOtp(body.email)
+        return OtpSentResponse()
     }
 
+    @Operation(summary = "C12 OTP 검증 + 세션 발급")
     @PostMapping("/otp/verify")
     fun verifyOtp(
         @RequestBody body: OtpVerifyBody,

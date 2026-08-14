@@ -489,6 +489,29 @@ class ArcApiRestDocsTest : DescribeSpec() {
                     .andDo(MockMvcRestDocumentation.document("internal-case-advance"))
             }
         }
+
+        describe("POST /auth/otp/request") {
+            it("유효한 이메일로 OTP 요청 시 200 + sent:true를 반환한다 (PI-163 C11)") {
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/auth/otp/request")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"email":"otp-test@example.com"}"""),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.sent").value(true))
+                    .andDo(MockMvcRestDocumentation.document("auth-otp-request"))
+            }
+
+            it("요청 body 없이 요청하면 400을 반환한다 (PI-163 C11)") {
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/auth/otp/request")
+                            .contentType(MediaType.APPLICATION_JSON),
+                    ).andExpect(MockMvcResultMatchers.status().isBadRequest)
+            }
+        }
     }
 
     private fun cleanupTestData() {
