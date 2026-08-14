@@ -147,6 +147,48 @@ class ArcApiRestDocsTest : DescribeSpec() {
             }
         }
 
+        describe("GET /cases/{id}") {
+            it("본인 케이스를 조회하면 200 + CaseResponse를 반환한다 (PI-154 C2)") {
+                val caseId = insertCaseForSales()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$caseId")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(caseId.toString()))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.status").exists())
+                    .andDo(MockMvcRestDocumentation.document("cases-get"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-154 C2)") {
+                val caseId = insertCaseForSales()
+                docsMvc
+                    .perform(MockMvcRequestBuilders.get("/cases/$caseId"))
+                    .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("타 고객의 케이스는 403을 반환한다 (PI-154 C2)") {
+                val otherCaseId = insertCaseForDifferentCustomer()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$otherCaseId")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isForbidden)
+            }
+
+            it("존재하지 않는 케이스는 404를 반환한다 (PI-154 C2)") {
+                val unknownId = UUID.randomUUID()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .get("/cases/$unknownId")
+                            .header("Authorization", "Bearer $custToken"),
+                    ).andExpect(MockMvcResultMatchers.status().isNotFound)
+            }
+        }
+
         describe("GET /internal/cases") {
             it("직원 인증으로 전체 케이스 목록을 반환한다") {
                 docsMvc
@@ -207,6 +249,27 @@ class ArcApiRestDocsTest : DescribeSpec() {
             ).param("staffId", salesId)
             .param("token", salesToken)
             .update()
+    }
+
+    private fun insertCaseForDifferentCustomer(): UUID {
+        val otherId = UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+        val caseId = UUID.randomUUID()
+        jdbc
+            .sql("INSERT INTO customer (id, email) VALUES (:id, :email) ON CONFLICT DO NOTHING")
+            .param("id", otherId)
+            .param("email", "other@test.com")
+            .update()
+        jdbc
+            .sql(
+                """INSERT INTO onboarding_case
+               (id, customer_id, status, services, sectors, segment_meta, pinned_question_ids)
+               VALUES (:id, :custId, :status,
+                       ARRAY[]::text[], ARRAY[]::text[], '{}'::jsonb, '{}'::jsonb)""",
+            ).param("id", caseId)
+            .param("custId", otherId)
+            .param("status", CaseStatus.INQUIRY_RECEIVED)
+            .update()
+        return caseId
     }
 
     private fun insertCaseForSales(): UUID {
