@@ -11,6 +11,7 @@ import jakarta.servlet.Filter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.servlet.FilterRegistrationBean
+import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.restdocs.ManualRestDocumentation
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation
@@ -189,6 +190,58 @@ class ArcApiRestDocsTest : DescribeSpec() {
             }
         }
 
+        describe("POST /cases/{id}/intake/first/submit") {
+            val intakeBody =
+                """{"answers":{"businessType":"corporation","foundingCountry":"KR","services":["remittance"]}}"""
+
+            it("1차 인테이크를 제출하면 200 + entityCode·services·pinnedQuestionIds.second를 반환한다 (PI-156 C4)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/intake/first/submit")
+                            .header("Authorization", "Bearer $custToken")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(intakeBody),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.entityCode").value("ENTITY_CORP"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.services[0]").value("SVC_PAYOUT"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.pinnedQuestionIds.second").isArray)
+                    .andDo(MockMvcRestDocumentation.document("cases-submit-first-intake"))
+            }
+
+            it("인증 없이 요청하면 401을 반환한다 (PI-156 C4)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/intake/first/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(intakeBody),
+                    ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            }
+
+            it("이미 제출된 케이스에 재제출하면 409를 반환한다 (PI-156 C4)") {
+                val caseId = insertInquiryCase()
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/intake/first/submit")
+                            .header("Authorization", "Bearer $custToken")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(intakeBody),
+                    ).andExpect(MockMvcResultMatchers.status().isOk)
+                docsMvc
+                    .perform(
+                        MockMvcRequestBuilders
+                            .post("/cases/$caseId/intake/first/submit")
+                            .header("Authorization", "Bearer $custToken")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(intakeBody),
+                    ).andExpect(MockMvcResultMatchers.status().isConflict)
+            }
+        }
+
         describe("GET /internal/cases") {
             it("직원 인증으로 전체 케이스 목록을 반환한다") {
                 docsMvc
@@ -249,6 +302,21 @@ class ArcApiRestDocsTest : DescribeSpec() {
             ).param("staffId", salesId)
             .param("token", salesToken)
             .update()
+    }
+
+    private fun insertInquiryCase(): UUID {
+        val caseId = UUID.randomUUID()
+        jdbc
+            .sql(
+                """INSERT INTO onboarding_case
+               (id, customer_id, status, services, sectors, segment_meta, pinned_question_ids)
+               VALUES (:id, :custId, :status,
+                       ARRAY[]::text[], ARRAY[]::text[], '{}'::jsonb, '{"first":[]}'::jsonb)""",
+            ).param("id", caseId)
+            .param("custId", custId)
+            .param("status", CaseStatus.INQUIRY_RECEIVED)
+            .update()
+        return caseId
     }
 
     private fun insertCaseForDifferentCustomer(): UUID {
