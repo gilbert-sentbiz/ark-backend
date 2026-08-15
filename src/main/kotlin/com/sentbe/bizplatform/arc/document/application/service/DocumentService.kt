@@ -75,13 +75,6 @@ class DocumentService(
 
         if (wasRevisionRequired) {
             adapter.resolveOpenRevisions(documentId)
-            if (adapter.countOpenRevisionsByCaseId(caseId) == 0) {
-                val currentCase = casePort.findById(caseId)
-                val returnTo = currentCase?.revisionRequestedFrom
-                if (currentCase?.status == CaseStatus.REVISION_REQUESTED && returnTo != null) {
-                    casePort.save(currentCase.copy(status = returnTo, revisionRequestedFrom = null))
-                }
-            }
         }
 
         adapter.updateStatus(documentId, "SUBMITTED")
