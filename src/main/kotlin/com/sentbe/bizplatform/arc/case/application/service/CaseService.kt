@@ -174,6 +174,7 @@ class CaseService(
         val case = requireCase(caseId)
         val (nextStatus, requiredRole) =
             when (case.status) {
+                CaseStatus.DOCUMENT_SUBMISSION_REQUIRED -> Pair(CaseStatus.INITIAL_SCREENING, "SALES")
                 CaseStatus.INITIAL_SCREENING -> Pair(CaseStatus.DOCUMENT_SCREENING_REQUIRED, "SALES")
                 CaseStatus.DOCUMENT_SCREENING_REQUIRED -> Pair(CaseStatus.APPROVAL_REVIEW_REQUIRED, "OPS")
                 CaseStatus.APPROVAL_REVIEW_REQUIRED -> Pair(CaseStatus.ACCOUNT_SETUP_REQUIRED, "COMPLIANCE")

@@ -4,9 +4,9 @@ import com.sentbe.bizplatform.arc.document.application.service.S3StorageService
 import com.sentbe.bizplatform.arc.global.auth.CustomerAuthFilter
 import com.sentbe.bizplatform.arc.global.auth.StaffAuthFilter
 import com.sentbe.bizplatform.arc.support.ArcTestContainerInitializer
-import jakarta.servlet.Filter
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import jakarta.servlet.Filter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.servlet.FilterRegistrationBean
@@ -48,10 +48,11 @@ class HealthControllerTest : DescribeSpec() {
 
         describe("GET /actuator/health") {
             it("200 OK를 반환한다") {
-                val result = mockMvc
-                    .perform(MockMvcRequestBuilders.get("/actuator/health"))
-                    .andExpect(MockMvcResultMatchers.status().isOk)
-                    .andReturn()
+                val result =
+                    mockMvc
+                        .perform(MockMvcRequestBuilders.get("/actuator/health"))
+                        .andExpect(MockMvcResultMatchers.status().isOk)
+                        .andReturn()
 
                 result.response.status shouldBe 200
             }
