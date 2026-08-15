@@ -19,6 +19,7 @@ import java.util.UUID
 data class CaseSummaryResponse(
     val id: UUID,
     val customerId: UUID,
+    val companyName: String?,
     val status: String,
     val entityCode: String?,
     val services: List<String>,
@@ -62,9 +63,15 @@ class InternalCaseController(
         val all = service.getAllCases()
         val filtered = if (status != null) all.filter { it.status == status } else all
         return filtered.map {
+            val companyName =
+                service
+                    .getIntake(it.id, "first")
+                    ?.answers
+                    ?.get("company_name") as? String
             CaseSummaryResponse(
                 id = it.id,
                 customerId = it.customerId,
+                companyName = companyName,
                 status = it.status,
                 entityCode = it.entityCode,
                 services = it.services,
