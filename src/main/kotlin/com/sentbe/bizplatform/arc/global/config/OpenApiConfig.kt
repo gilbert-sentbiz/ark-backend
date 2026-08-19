@@ -7,13 +7,13 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class OpenApiConfig {
-    @Bean
-    fun openApi(): OpenAPI =
-        OpenAPI()
-            .info(
-                Info()
-                    .title("ARC Onboarding API")
-                    .description("SentBe B2B 고객 온보딩 플랫폼 API")
-                    .version("v1"),
-            )
+	@Bean
+	fun openApi(): OpenAPI =
+		OpenAPI()
+			.info(
+				Info()
+					.title("ARC Onboarding API")
+					.description("SentBe B2B 고객 온보딩 플랫폼 API")
+					.version("v1"),
+			)
 }

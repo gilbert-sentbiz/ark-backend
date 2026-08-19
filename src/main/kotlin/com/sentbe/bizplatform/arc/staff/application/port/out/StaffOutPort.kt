@@ -4,10 +4,10 @@ import com.sentbe.bizplatform.arc.staff.application.domain.Staff
 import com.sentbe.bizplatform.arc.staff.application.domain.StaffSession
 
 interface StaffOutPort {
-    fun findByEmailAndIsActive(
-        email: String,
-        isActive: Boolean,
-    ): Staff?
+	fun findByEmailAndIsActive(
+		email: String,
+		isActive: Boolean,
+	): Staff?
 
-    fun saveSession(session: StaffSession)
+	fun saveSession(session: StaffSession)
 }

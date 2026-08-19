@@ -10,10 +10,10 @@ import java.sql.Connection
  */
 @Component
 class TextArrayWriteSupport(
-    private val jdbc: JdbcClient,
+	private val jdbc: JdbcClient,
 ) {
-    fun toSqlArray(
-        conn: Connection,
-        values: List<String>,
-    ): java.sql.Array = conn.createArrayOf("text", values.toTypedArray())
+	fun toSqlArray(
+		conn: Connection,
+		values: List<String>,
+	): java.sql.Array = conn.createArrayOf("text", values.toTypedArray())
 }

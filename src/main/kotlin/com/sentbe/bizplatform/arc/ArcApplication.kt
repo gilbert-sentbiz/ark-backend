@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class ArcApplication
 
 fun main(args: Array<String>) {
-    runApplication<ArcApplication>(*args)
+	runApplication<ArcApplication>(*args)
 }

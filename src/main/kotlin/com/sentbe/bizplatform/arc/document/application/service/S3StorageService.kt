@@ -8,22 +8,22 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 
 @Service
 class S3StorageService(
-    private val s3: S3Client,
-    private val credentials: CredentialSource,
+	private val s3: S3Client,
+	private val credentials: CredentialSource,
 ) {
-    fun upload(
-        key: String,
-        bytes: ByteArray,
-        contentType: String,
-    ) {
-        val request =
-            PutObjectRequest
-                .builder()
-                .bucket(credentials.s3Bucket())
-                .key(key)
-                .contentType(contentType)
-                .contentLength(bytes.size.toLong())
-                .build()
-        s3.putObject(request, RequestBody.fromBytes(bytes))
-    }
+	fun upload(
+		key: String,
+		bytes: ByteArray,
+		contentType: String,
+	) {
+		val request =
+			PutObjectRequest
+				.builder()
+				.bucket(credentials.s3Bucket())
+				.key(key)
+				.contentType(contentType)
+				.contentLength(bytes.size.toLong())
+				.build()
+		s3.putObject(request, RequestBody.fromBytes(bytes))
+	}
 }

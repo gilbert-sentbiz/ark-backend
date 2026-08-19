@@ -7,10 +7,10 @@ import java.util.UUID
 
 @Table("staff")
 data class Staff(
-    @Id val id: UUID = UUID.randomUUID(),
-    val email: String,
-    val name: String,
-    val role: String,
-    val isActive: Boolean = true,
-    val createdAt: OffsetDateTime = OffsetDateTime.now(),
+	@Id val id: UUID = UUID.randomUUID(),
+	val email: String,
+	val name: String,
+	val role: String,
+	val isActive: Boolean = true,
+	val createdAt: OffsetDateTime = OffsetDateTime.now(),
 )

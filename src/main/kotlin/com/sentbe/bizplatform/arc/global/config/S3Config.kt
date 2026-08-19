@@ -10,25 +10,25 @@ import java.net.URI
 
 @Configuration
 class S3Config(
-    private val credentials: CredentialSource,
+	private val credentials: CredentialSource,
 ) {
-    @Bean
-    fun s3Client(): S3Client {
-        val builder =
-            S3Client
-                .builder()
-                .credentialsProvider(
-                    StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(credentials.s3AccessKey(), credentials.s3SecretKey()),
-                    ),
-                ).region(Region.AP_NORTHEAST_2)
+	@Bean
+	fun s3Client(): S3Client {
+		val builder =
+			S3Client
+				.builder()
+				.credentialsProvider(
+					StaticCredentialsProvider.create(
+						AwsBasicCredentials.create(credentials.s3AccessKey(), credentials.s3SecretKey()),
+					),
+				).region(Region.AP_NORTHEAST_2)
 
-        val endpoint = credentials.s3Endpoint()
-        if (endpoint != null) {
-            builder.endpointOverride(URI.create(endpoint))
-            builder.forcePathStyle(true)
-        }
+		val endpoint = credentials.s3Endpoint()
+		if (endpoint != null) {
+			builder.endpointOverride(URI.create(endpoint))
+			builder.forcePathStyle(true)
+		}
 
-        return builder.build()
-    }
+		return builder.build()
+	}
 }

@@ -5,8 +5,8 @@ import org.springframework.data.repository.CrudRepository
 import java.util.UUID
 
 interface StaffRepository : CrudRepository<Staff, UUID> {
-    fun findByEmailAndIsActive(
-        email: String,
-        isActive: Boolean,
-    ): Staff?
+	fun findByEmailAndIsActive(
+		email: String,
+		isActive: Boolean,
+	): Staff?
 }

@@ -14,35 +14,35 @@ import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 data class RevisionRequestBody(
-    val reason: String,
+	val reason: String,
 )
 
 @Tag(name = "Internal Document", description = "내부 서류 관리 API")
 @RestController
 @RequestMapping("/internal/documents")
 class InternalDocumentController(
-    private val service: DocumentUseCase,
+	private val service: DocumentUseCase,
 ) {
-    @Operation(summary = "I5 서류 보완 요청")
-    @PostMapping("/{id}/revision-requests")
-    fun requestRevision(
-        @PathVariable id: UUID,
-        @RequestBody body: RevisionRequestBody,
-    ): DocumentResponse {
-        val staff =
-            AuthContext.staff
-                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
-        return service.requestRevision(id, staff, body.reason).toResponse()
-    }
+	@Operation(summary = "I5 서류 보완 요청")
+	@PostMapping("/{id}/revision-requests")
+	fun requestRevision(
+		@PathVariable id: UUID,
+		@RequestBody body: RevisionRequestBody,
+	): DocumentResponse {
+		val staff =
+			AuthContext.staff
+				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
+		return service.requestRevision(id, staff, body.reason).toResponse()
+	}
 
-    @Operation(summary = "I6 서류 승인")
-    @PostMapping("/{id}/approve")
-    fun approve(
-        @PathVariable id: UUID,
-    ): DocumentResponse {
-        val staff =
-            AuthContext.staff
-                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
-        return service.approveDocument(id, staff).toResponse()
-    }
+	@Operation(summary = "I6 서류 승인")
+	@PostMapping("/{id}/approve")
+	fun approve(
+		@PathVariable id: UUID,
+	): DocumentResponse {
+		val staff =
+			AuthContext.staff
+				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
+		return service.approveDocument(id, staff).toResponse()
+	}
 }

@@ -6,6 +6,6 @@ import org.springframework.data.repository.CrudRepository
 import java.util.UUID
 
 interface DocTemplateRepository : CrudRepository<DocTemplate, UUID> {
-    @Query("SELECT * FROM doc_template WHERE deactivated_at IS NULL ORDER BY type")
-    fun findAllActive(): List<DocTemplate>
+	@Query("SELECT * FROM doc_template WHERE deactivated_at IS NULL ORDER BY type")
+	fun findAllActive(): List<DocTemplate>
 }

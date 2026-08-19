@@ -7,17 +7,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
 class CorsConfig {
-    @Bean
-    fun corsConfigurer(): WebMvcConfigurer =
-        object : WebMvcConfigurer {
-            override fun addCorsMappings(registry: CorsRegistry) {
-                registry
-                    .addMapping("/**")
-                    .allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
-                    .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                    .allowedHeaders("*")
-                    .allowCredentials(true)
-                    .maxAge(3600)
-            }
-        }
+	@Bean
+	fun corsConfigurer(): WebMvcConfigurer =
+		object : WebMvcConfigurer {
+			override fun addCorsMappings(registry: CorsRegistry) {
+				registry
+					.addMapping("/**")
+					.allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
+					.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+					.allowedHeaders("*")
+					.allowCredentials(true)
+					.maxAge(3600)
+			}
+		}
 }

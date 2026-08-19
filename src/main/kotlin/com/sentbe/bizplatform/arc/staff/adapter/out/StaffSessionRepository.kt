@@ -5,5 +5,5 @@ import org.springframework.data.repository.CrudRepository
 import java.util.UUID
 
 interface StaffSessionRepository : CrudRepository<StaffSession, UUID> {
-    fun findByToken(token: String): StaffSession?
+	fun findByToken(token: String): StaffSession?
 }

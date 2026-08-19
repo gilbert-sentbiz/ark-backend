@@ -13,28 +13,28 @@ private val LIST_TYPE = object : TypeReference<List<Any>>() {}
 
 @WritingConverter
 class MapToJsonbConverter : Converter<Map<*, *>, PGobject> {
-    override fun convert(source: Map<*, *>): PGobject =
-        PGobject().apply {
-            type = "jsonb"
-            value = MAPPER.writeValueAsString(source)
-        }
+	override fun convert(source: Map<*, *>): PGobject =
+		PGobject().apply {
+			type = "jsonb"
+			value = MAPPER.writeValueAsString(source)
+		}
 }
 
 @ReadingConverter
 class JsonbToMapConverter : Converter<PGobject, Map<String, Any>> {
-    override fun convert(source: PGobject): Map<String, Any> = MAPPER.readValue(source.value ?: "{}", MAP_TYPE)
+	override fun convert(source: PGobject): Map<String, Any> = MAPPER.readValue(source.value ?: "{}", MAP_TYPE)
 }
 
 @WritingConverter
 class ListToJsonbConverter : Converter<List<*>, PGobject> {
-    override fun convert(source: List<*>): PGobject =
-        PGobject().apply {
-            type = "jsonb"
-            value = MAPPER.writeValueAsString(source)
-        }
+	override fun convert(source: List<*>): PGobject =
+		PGobject().apply {
+			type = "jsonb"
+			value = MAPPER.writeValueAsString(source)
+		}
 }
 
 @ReadingConverter
 class JsonbToListConverter : Converter<PGobject, List<Any>> {
-    override fun convert(source: PGobject): List<Any> = MAPPER.readValue(source.value ?: "[]", LIST_TYPE)
+	override fun convert(source: PGobject): List<Any> = MAPPER.readValue(source.value ?: "[]", LIST_TYPE)
 }

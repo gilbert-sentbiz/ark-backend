@@ -13,3 +13,8 @@ indent_size = 2
 
 [*.{kts,kt}]
 indent_size = 4
+indent_style = tab
+ktlint_code_style = ktlint_official
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_package-name = disabled
+ktlint_standard_no-blank-line-in-list = disabled

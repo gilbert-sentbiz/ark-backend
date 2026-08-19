@@ -6,7 +6,7 @@ import java.sql.Array
 
 @ReadingConverter
 class ArrayToStringListConverter : Converter<Array, List<String>> {
-    override fun convert(source: Array): List<String> =
-        @Suppress("UNCHECKED_CAST")
-        (source.array as kotlin.Array<Any?>).filterNotNull().map { it.toString() }
+	override fun convert(source: Array): List<String> =
+		@Suppress("UNCHECKED_CAST")
+		(source.array as kotlin.Array<Any?>).filterNotNull().map { it.toString() }
 }

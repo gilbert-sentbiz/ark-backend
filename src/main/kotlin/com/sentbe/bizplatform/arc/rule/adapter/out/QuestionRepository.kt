@@ -6,6 +6,6 @@ import org.springframework.data.repository.CrudRepository
 import java.util.UUID
 
 interface QuestionRepository : CrudRepository<Question, UUID> {
-    @Query("SELECT * FROM question WHERE deactivated_at IS NULL ORDER BY display_order, code")
-    fun findAllActive(): List<Question>
+	@Query("SELECT * FROM question WHERE deactivated_at IS NULL ORDER BY display_order, code")
+	fun findAllActive(): List<Question>
 }

@@ -8,13 +8,13 @@ import org.springframework.stereotype.Component
 
 @Component
 class RuleQueryAdapter(
-    private val segmentRepo: SegmentRepository,
-    private val questionRepo: QuestionRepository,
-    private val docTemplateRepo: DocTemplateRepository,
+	private val segmentRepo: SegmentRepository,
+	private val questionRepo: QuestionRepository,
+	private val docTemplateRepo: DocTemplateRepository,
 ) : RuleQueryPort {
-    override fun findActiveSegments(): List<Segment> = segmentRepo.findAllActive()
+	override fun findActiveSegments(): List<Segment> = segmentRepo.findAllActive()
 
-    override fun findActiveQuestions(): List<Question> = questionRepo.findAllActive()
+	override fun findActiveQuestions(): List<Question> = questionRepo.findAllActive()
 
-    override fun findActiveDocTemplates(): List<DocTemplate> = docTemplateRepo.findAllActive()
+	override fun findActiveDocTemplates(): List<DocTemplate> = docTemplateRepo.findAllActive()
 }

@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 data class MockLoginRequest(
-    val email: String,
+	val email: String,
 )
 
 data class StaffTokenResponse(
-    val token: String,
+	val token: String,
 )
 
 @Tag(name = "Internal Auth", description = "내부 직원 인증 API (local only)")
@@ -22,11 +22,11 @@ data class StaffTokenResponse(
 @RequestMapping("/internal/auth")
 @Profile("local")
 class StaffAuthController(
-    private val useCase: StaffAuthUseCase,
+	private val useCase: StaffAuthUseCase,
 ) {
-    @Operation(summary = "I7 내부 SSO 목 로그인 (local)")
-    @PostMapping("/mock-login")
-    fun mockLogin(
-        @RequestBody body: MockLoginRequest,
-    ): StaffTokenResponse = StaffTokenResponse(useCase.mockLogin(body.email))
+	@Operation(summary = "I7 내부 SSO 목 로그인 (local)")
+	@PostMapping("/mock-login")
+	fun mockLogin(
+		@RequestBody body: MockLoginRequest,
+	): StaffTokenResponse = StaffTokenResponse(useCase.mockLogin(body.email))
 }

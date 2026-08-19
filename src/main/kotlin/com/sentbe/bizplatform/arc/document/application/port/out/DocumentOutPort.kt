@@ -7,26 +7,26 @@ import com.sentbe.bizplatform.arc.document.application.domain.RevisionRequest
 import java.util.UUID
 
 interface DocumentOutPort {
-    fun findById(id: UUID): Document?
+	fun findById(id: UUID): Document?
 
-    fun findByCaseId(caseId: UUID): List<DocumentDetail>
+	fun findByCaseId(caseId: UUID): List<DocumentDetail>
 
-    fun updateStatus(
-        id: UUID,
-        status: String,
-    )
+	fun updateStatus(
+		id: UUID,
+		status: String,
+	)
 
-    fun markPreviousFilesOld(documentId: UUID)
+	fun markPreviousFilesOld(documentId: UUID)
 
-    fun insertFile(file: DocumentFile)
+	fun insertFile(file: DocumentFile)
 
-    fun insertRevisionRequest(revision: RevisionRequest)
+	fun insertRevisionRequest(revision: RevisionRequest)
 
-    fun resolveOpenRevisions(documentId: UUID)
+	fun resolveOpenRevisions(documentId: UUID)
 
-    fun hasUnsubmittedRequiredDocs(caseId: UUID): Boolean
+	fun hasUnsubmittedRequiredDocs(caseId: UUID): Boolean
 
-    fun countOpenRevisionsByCaseId(caseId: UUID): Int
+	fun countOpenRevisionsByCaseId(caseId: UUID): Int
 
-    fun hasLatestFile(documentId: UUID): Boolean
+	fun hasLatestFile(documentId: UUID): Boolean
 }

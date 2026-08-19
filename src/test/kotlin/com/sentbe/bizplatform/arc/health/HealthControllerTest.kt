@@ -24,38 +24,38 @@ import org.springframework.web.context.WebApplicationContext
 @ActiveProfiles("local")
 @ContextConfiguration(initializers = [ArcTestContainerInitializer::class])
 class HealthControllerTest : DescribeSpec() {
-    @MockitoBean
-    lateinit var s3StorageService: S3StorageService
+	@MockitoBean
+	lateinit var s3StorageService: S3StorageService
 
-    @Autowired
-    lateinit var wac: WebApplicationContext
+	@Autowired
+	lateinit var wac: WebApplicationContext
 
-    @Autowired
-    lateinit var customerAuthFilterReg: FilterRegistrationBean<CustomerAuthFilter>
+	@Autowired
+	lateinit var customerAuthFilterReg: FilterRegistrationBean<CustomerAuthFilter>
 
-    @Autowired
-    lateinit var staffAuthFilterReg: FilterRegistrationBean<StaffAuthFilter>
+	@Autowired
+	lateinit var staffAuthFilterReg: FilterRegistrationBean<StaffAuthFilter>
 
-    private lateinit var mockMvc: MockMvc
+	private lateinit var mockMvc: MockMvc
 
-    init {
-        beforeSpec {
-            val builder = MockMvcBuilders.webAppContextSetup(wac)
-            builder.addFilter<DefaultMockMvcBuilder>(customerAuthFilterReg.filter!! as Filter, "/*")
-            builder.addFilter<DefaultMockMvcBuilder>(staffAuthFilterReg.filter!! as Filter, "/internal/*")
-            mockMvc = builder.build()
-        }
+	init {
+		beforeSpec {
+			val builder = MockMvcBuilders.webAppContextSetup(wac)
+			builder.addFilter<DefaultMockMvcBuilder>(customerAuthFilterReg.filter!! as Filter, "/*")
+			builder.addFilter<DefaultMockMvcBuilder>(staffAuthFilterReg.filter!! as Filter, "/internal/*")
+			mockMvc = builder.build()
+		}
 
-        describe("GET /actuator/health") {
-            it("200 OK를 반환한다") {
-                val result =
-                    mockMvc
-                        .perform(MockMvcRequestBuilders.get("/actuator/health"))
-                        .andExpect(MockMvcResultMatchers.status().isOk)
-                        .andReturn()
+		describe("GET /actuator/health") {
+			it("200 OK를 반환한다") {
+				val result =
+					mockMvc
+						.perform(MockMvcRequestBuilders.get("/actuator/health"))
+						.andExpect(MockMvcResultMatchers.status().isOk)
+						.andReturn()
 
-                result.response.status shouldBe 200
-            }
-        }
-    }
+				result.response.status shouldBe 200
+			}
+		}
+	}
 }

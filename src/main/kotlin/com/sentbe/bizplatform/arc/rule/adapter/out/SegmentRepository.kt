@@ -6,6 +6,6 @@ import org.springframework.data.repository.CrudRepository
 import java.util.UUID
 
 interface SegmentRepository : CrudRepository<Segment, UUID> {
-    @Query("SELECT * FROM segment WHERE deactivated_at IS NULL ORDER BY axis, code")
-    fun findAllActive(): List<Segment>
+	@Query("SELECT * FROM segment WHERE deactivated_at IS NULL ORDER BY axis, code")
+	fun findAllActive(): List<Segment>
 }

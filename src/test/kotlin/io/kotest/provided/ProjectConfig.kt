@@ -5,5 +5,5 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 
 class ProjectConfig : AbstractProjectConfig() {
-    override val extensions: List<Extension> = listOf(SpringKotest6Extension())
+	override val extensions: List<Extension> = listOf(SpringKotest6Extension())
 }

@@ -12,17 +12,17 @@ import javax.sql.DataSource
 @Configuration
 @Profile("dev", "stg", "prd")
 class DataSourceConfig {
-    @Bean
-    fun dataSource(credentials: CredentialSource): DataSource {
-        val config = HikariConfig()
-        config.jdbcUrl = credentials.dbUrl()
-        config.username = credentials.dbUsername()
-        config.password = credentials.dbPassword()
-        config.driverClassName = "org.postgresql.Driver"
-        return HikariDataSource(config)
-    }
+	@Bean
+	fun dataSource(credentials: CredentialSource): DataSource {
+		val config = HikariConfig()
+		config.jdbcUrl = credentials.dbUrl()
+		config.username = credentials.dbUsername()
+		config.password = credentials.dbPassword()
+		config.driverClassName = "org.postgresql.Driver"
+		return HikariDataSource(config)
+	}
 
-    @Bean
-    fun redisConnectionFactory(credentials: CredentialSource): LettuceConnectionFactory =
-        LettuceConnectionFactory(RedisStandaloneConfiguration(credentials.redisHost(), credentials.redisPort()))
+	@Bean
+	fun redisConnectionFactory(credentials: CredentialSource): LettuceConnectionFactory =
+		LettuceConnectionFactory(RedisStandaloneConfiguration(credentials.redisHost(), credentials.redisPort()))
 }

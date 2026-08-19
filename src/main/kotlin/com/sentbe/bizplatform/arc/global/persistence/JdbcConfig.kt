@@ -12,21 +12,21 @@ import java.time.ZoneOffset
 
 @ReadingConverter
 class TimestampToOffsetDateTimeConverter : Converter<Timestamp, OffsetDateTime> {
-    override fun convert(source: Timestamp): OffsetDateTime = source.toInstant().atOffset(ZoneOffset.UTC)
+	override fun convert(source: Timestamp): OffsetDateTime = source.toInstant().atOffset(ZoneOffset.UTC)
 }
 
 @Configuration
 class JdbcConfig : AbstractJdbcConfiguration() {
-    @Bean
-    override fun jdbcCustomConversions(): JdbcCustomConversions =
-        JdbcCustomConversions(
-            listOf(
-                MapToJsonbConverter(),
-                JsonbToMapConverter(),
-                ListToJsonbConverter(),
-                JsonbToListConverter(),
-                ArrayToStringListConverter(),
-                TimestampToOffsetDateTimeConverter(),
-            ),
-        )
+	@Bean
+	override fun jdbcCustomConversions(): JdbcCustomConversions =
+		JdbcCustomConversions(
+			listOf(
+				MapToJsonbConverter(),
+				JsonbToMapConverter(),
+				ListToJsonbConverter(),
+				JsonbToListConverter(),
+				ArrayToStringListConverter(),
+				TimestampToOffsetDateTimeConverter(),
+			),
+		)
 }

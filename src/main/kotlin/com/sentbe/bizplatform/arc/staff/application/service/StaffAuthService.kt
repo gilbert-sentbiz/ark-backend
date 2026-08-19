@@ -13,23 +13,23 @@ import java.util.UUID
 
 @Service
 class StaffAuthService(
-    private val outPort: StaffOutPort,
-    @Value("\${arc.auth.staff-session-hours:8}") private val sessionHours: Long,
+	private val outPort: StaffOutPort,
+	@Value("\${arc.auth.staff-session-hours:8}") private val sessionHours: Long,
 ) : StaffAuthUseCase {
-    @Transactional
-    override fun mockLogin(email: String): String {
-        val staff =
-            outPort.findByEmailAndIsActive(email, true)
-                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "활성 직원 계정 없음: $email")
+	@Transactional
+	override fun mockLogin(email: String): String {
+		val staff =
+			outPort.findByEmailAndIsActive(email, true)
+				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "활성 직원 계정 없음: $email")
 
-        val token = UUID.randomUUID().toString()
-        outPort.saveSession(
-            StaffSession(
-                staffId = staff.id,
-                token = token,
-                expiresAt = OffsetDateTime.now().plusHours(sessionHours),
-            ),
-        )
-        return token
-    }
+		val token = UUID.randomUUID().toString()
+		outPort.saveSession(
+			StaffSession(
+				staffId = staff.id,
+				token = token,
+				expiresAt = OffsetDateTime.now().plusHours(sessionHours),
+			),
+		)
+		return token
+	}
 }

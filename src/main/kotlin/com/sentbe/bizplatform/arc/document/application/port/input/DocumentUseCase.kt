@@ -7,25 +7,25 @@ import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 
 interface DocumentUseCase {
-    fun getDocuments(
-        caseId: UUID,
-        customer: AuthenticatedCustomer,
-    ): List<DocumentDetail>
+	fun getDocuments(
+		caseId: UUID,
+		customer: AuthenticatedCustomer,
+	): List<DocumentDetail>
 
-    fun uploadFile(
-        documentId: UUID,
-        file: MultipartFile,
-        customer: AuthenticatedCustomer,
-    ): DocumentDetail
+	fun uploadFile(
+		documentId: UUID,
+		file: MultipartFile,
+		customer: AuthenticatedCustomer,
+	): DocumentDetail
 
-    fun requestRevision(
-        documentId: UUID,
-        staff: AuthenticatedStaff,
-        reason: String,
-    ): DocumentDetail
+	fun requestRevision(
+		documentId: UUID,
+		staff: AuthenticatedStaff,
+		reason: String,
+	): DocumentDetail
 
-    fun approveDocument(
-        documentId: UUID,
-        staff: AuthenticatedStaff,
-    ): DocumentDetail
+	fun approveDocument(
+		documentId: UUID,
+		staff: AuthenticatedStaff,
+	): DocumentDetail
 }
