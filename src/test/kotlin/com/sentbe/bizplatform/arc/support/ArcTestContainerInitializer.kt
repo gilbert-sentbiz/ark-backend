@@ -37,7 +37,7 @@ private object LiquibaseMigrations {
 			)
 		val liq = SpringLiquibase()
 		liq.dataSource = ds
-		liq.changeLog = "classpath:db/changelog/db.changelog-master.xml"
+		liq.changeLog = "classpath:db/changelog/db.changelog-master.yaml"
 		liq.afterPropertiesSet()
 	}
 }
