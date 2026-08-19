@@ -7,49 +7,27 @@ import com.sentbe.bizplatform.arc.document.application.domain.RevisionRequest
 import com.sentbe.bizplatform.arc.document.application.port.out.DocumentOutPort
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
-import java.sql.ResultSet
 import java.time.OffsetDateTime
 import java.util.UUID
 
 @Component
-class DocumentJdbcAdapter(
+class DocumentOutAdapter(
 	private val jdbc: JdbcClient,
+	private val documentRepository: DocumentRepository,
+	private val documentFileRepository: DocumentFileRepository,
+	private val revisionRequestRepository: RevisionRequestRepository,
 ) : DocumentOutPort {
-	override fun findById(id: UUID): Document? =
-		jdbc
-			.sql("SELECT * FROM document WHERE id = :id")
-			.param("id", id)
-			.query { rs, _ -> rs.toDocument() }
-			.optional()
-			.orElse(null)
+	override fun findById(id: UUID): Document? = documentRepository.findById(id).orElse(null)?.toDomain()
 
-	override fun findByCaseId(caseId: UUID): List<DocumentDetail> {
-		val docs =
-			jdbc
-				.sql("SELECT * FROM document WHERE case_id = :caseId ORDER BY type")
-				.param("caseId", caseId)
-				.query { rs, _ -> rs.toDocument() }
-				.list()
-
-		return docs.map { doc ->
-			val latestFile =
-				jdbc
-					.sql("SELECT * FROM document_file WHERE document_id = :docId AND is_latest = true LIMIT 1")
-					.param("docId", doc.id)
-					.query { rs, _ -> rs.toFile() }
-					.optional()
-					.orElse(null)
-
+	override fun findByCaseId(caseId: UUID): List<DocumentDetail> =
+		documentRepository.findByCaseIdOrderByType(caseId).map { entity ->
+			val latestFile = documentFileRepository.findFirstByDocumentIdAndIsLatestTrue(entity.id)?.toDomain()
 			val openRevisions =
-				jdbc
-					.sql("SELECT * FROM revision_request WHERE document_id = :docId AND resolved_at IS NULL ORDER BY requested_at")
-					.param("docId", doc.id)
-					.query { rs, _ -> rs.toRevision() }
-					.list()
-
-			DocumentDetail(doc, latestFile, openRevisions)
+				revisionRequestRepository
+					.findByDocumentIdAndResolvedAtIsNullOrderByRequestedAt(entity.id)
+					.map { it.toDomain() }
+			DocumentDetail(entity.toDomain(), latestFile, openRevisions)
 		}
-	}
 
 	override fun updateStatus(
 		id: UUID,
@@ -112,9 +90,8 @@ class DocumentJdbcAdapter(
 	override fun hasUnsubmittedRequiredDocs(caseId: UUID): Boolean {
 		val count =
 			jdbc
-				.sql(
-					"SELECT COUNT(*) FROM document WHERE case_id = :caseId AND is_required = true AND status NOT IN ('SUBMITTED', 'APPROVED')",
-				).param("caseId", caseId)
+				.sql("SELECT COUNT(*) FROM document WHERE case_id = :caseId AND is_required = true AND status NOT IN ('SUBMITTED', 'APPROVED')")
+				.param("caseId", caseId)
 				.query(Int::class.java)
 				.single()
 		return count > 0
@@ -130,52 +107,44 @@ class DocumentJdbcAdapter(
 			.query(Int::class.java)
 			.single()
 
-	override fun hasLatestFile(documentId: UUID): Boolean {
-		val count =
-			jdbc
-				.sql("SELECT COUNT(*) FROM document_file WHERE document_id = :documentId AND is_latest = true")
-				.param("documentId", documentId)
-				.query(Int::class.java)
-				.single()
-		return count > 0
-	}
+	override fun hasLatestFile(documentId: UUID): Boolean = documentFileRepository.findFirstByDocumentIdAndIsLatestTrue(documentId) != null
 
-	private fun ResultSet.toDocument(): Document =
+	private fun DocumentJdbcEntity.toDomain() =
 		Document(
-			id = UUID.fromString(getString("id")),
-			caseId = UUID.fromString(getString("case_id")),
-			docTemplateId = UUID.fromString(getString("doc_template_id")),
-			type = getString("type"),
-			displayName = getString("display_name"),
-			status = getString("status"),
-			isRequired = getBoolean("is_required"),
-			isConditional = getBoolean("is_conditional"),
-			createdAt = getObject("created_at", OffsetDateTime::class.java),
-			updatedAt = getObject("updated_at", OffsetDateTime::class.java),
+			id = id,
+			caseId = caseId,
+			docTemplateId = docTemplateId,
+			type = type,
+			displayName = displayName,
+			status = status,
+			isRequired = isRequired,
+			isConditional = isConditional,
+			createdAt = createdAt ?: OffsetDateTime.now(),
+			updatedAt = updatedAt ?: OffsetDateTime.now(),
 		)
 
-	private fun ResultSet.toFile(): DocumentFile =
+	private fun DocumentFileJdbcEntity.toDomain() =
 		DocumentFile(
-			id = UUID.fromString(getString("id")),
-			documentId = UUID.fromString(getString("document_id")),
-			fileName = getString("file_name"),
-			fileSize = getInt("file_size"),
-			mimeType = getString("mime_type"),
-			storageKey = getString("storage_key"),
-			uploaderType = getString("uploader_type"),
-			uploaderStaffId = getString("uploader_staff_id")?.let { UUID.fromString(it) },
-			isLatest = getBoolean("is_latest"),
-			uploadedAt = getObject("uploaded_at", OffsetDateTime::class.java),
+			id = id!!,
+			documentId = documentId,
+			fileName = fileName,
+			fileSize = fileSize,
+			mimeType = mimeType,
+			storageKey = storageKey,
+			uploaderType = uploaderType,
+			uploaderStaffId = uploaderStaffId,
+			isLatest = isLatest,
+			uploadedAt = uploadedAt ?: OffsetDateTime.now(),
 		)
 
-	private fun ResultSet.toRevision(): RevisionRequest =
+	private fun RevisionRequestJdbcEntity.toDomain() =
 		RevisionRequest(
-			id = UUID.fromString(getString("id")),
-			documentId = UUID.fromString(getString("document_id")),
-			reason = getString("reason"),
-			requestedByStaffId = UUID.fromString(getString("requested_by_staff_id")),
-			requestedFromStatus = getString("requested_from_status"),
-			requestedAt = getObject("requested_at", OffsetDateTime::class.java),
-			resolvedAt = getObject("resolved_at", OffsetDateTime::class.java),
+			id = id!!,
+			documentId = documentId,
+			reason = reason,
+			requestedByStaffId = requestedByStaffId,
+			requestedFromStatus = requestedFromStatus,
+			requestedAt = requestedAt ?: OffsetDateTime.now(),
+			resolvedAt = resolvedAt,
 		)
 }
