@@ -1,0 +1,127 @@
+package com.sentbe.bizplatform.arc.global.exception
+
+import com.sentbe.bizplatform.arc.global.response.ApiResponse
+import jakarta.validation.ConstraintViolationException
+import org.springframework.dao.DataAccessException
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.web.HttpMediaTypeNotSupportedException
+import org.springframework.web.HttpRequestMethodNotSupportedException
+import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.servlet.resource.NoResourceFoundException
+import java.sql.SQLException
+
+@RestControllerAdvice
+class ArcExceptionAdvice {
+	@ExceptionHandler(ArcException::class)
+	fun handleArcException(ex: ArcException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ex.errorCode
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, ex.message ?: code.message, ex.data?.toString()))
+	}
+
+	// 과도기: 서비스 ResponseStatusException → ArcException 전환 전까지 유지
+	@ExceptionHandler(ResponseStatusException::class)
+	fun handleResponseStatus(ex: ResponseStatusException): ResponseEntity<ApiResponse<Nothing>> {
+		val status = ex.statusCode.value()
+		return ResponseEntity
+			.status(ex.statusCode)
+			.body(ApiResponse.exception(status, "G$status", ex.reason ?: ex.message))
+	}
+
+	@ExceptionHandler(MethodArgumentNotValidException::class)
+	fun handleMethodArgumentNotValid(ex: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Nothing>> {
+		val detail = ex.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+		val code = ArcGlobalErrorCode.INVALID_INPUT
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message, detail))
+	}
+
+	@ExceptionHandler(ConstraintViolationException::class)
+	fun handleConstraintViolation(ex: ConstraintViolationException): ResponseEntity<ApiResponse<Nothing>> {
+		val detail = ex.constraintViolations.joinToString(", ") { "${it.propertyPath}: ${it.message}" }
+		val code = ArcGlobalErrorCode.INVALID_INPUT
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message, detail))
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException::class)
+	fun handleTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.INVALID_INPUT
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message, "파라미터 타입 불일치: ${ex.name}"))
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException::class)
+	fun handleNotReadable(ex: HttpMessageNotReadableException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.MESSAGE_NOT_READABLE
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+
+	@ExceptionHandler(HttpMediaTypeNotSupportedException::class)
+	fun handleMediaType(ex: HttpMediaTypeNotSupportedException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.UNSUPPORTED_MEDIA_TYPE
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+	fun handleMethodNotSupported(ex: HttpRequestMethodNotSupportedException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.METHOD_NOT_SUPPORTED
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+
+	@ExceptionHandler(NoResourceFoundException::class)
+	fun handleNoHandler(ex: NoResourceFoundException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.RESOURCE_NOT_FOUND
+		return ResponseEntity
+			.status(HttpStatus.NOT_FOUND)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+
+	@ExceptionHandler(DataAccessException::class)
+	fun handleDataAccess(ex: DataAccessException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.DATA_ACCESS_ERROR
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+
+	@ExceptionHandler(SQLException::class)
+	fun handleSql(ex: SQLException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.DATA_ACCESS_ERROR
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+
+	@ExceptionHandler(RuntimeException::class)
+	fun handleRuntime(ex: RuntimeException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.INTERNAL_SERVER_ERROR
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+
+	@ExceptionHandler(Exception::class)
+	fun handleAll(ex: Exception): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArcGlobalErrorCode.INTERNAL_SERVER_ERROR
+		return ResponseEntity
+			.status(code.httpStatus)
+			.body(ApiResponse.exception(code.statusCode, code.code, code.message))
+	}
+}
