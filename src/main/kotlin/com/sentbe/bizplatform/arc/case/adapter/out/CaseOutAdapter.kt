@@ -15,8 +15,10 @@ private val MAPPER = ObjectMapper().findAndRegisterModules()
 private val MAP_TYPE = object : TypeReference<Map<String, Any>>() {}
 
 @Component
-class CaseJdbcAdapter(
+class CaseOutAdapter(
 	private val jdbc: JdbcClient,
+	private val caseRepository: OnboardingCaseRepository,
+	private val caseEventRepository: CaseEventRepository,
 ) : CaseOutPort {
 	override fun save(case: OnboardingCase): OnboardingCase {
 		val exists =
@@ -72,27 +74,12 @@ class CaseJdbcAdapter(
 		return findById(case.id)!!
 	}
 
-	override fun findById(id: UUID): OnboardingCase? =
-		jdbc
-			.sql("SELECT * FROM onboarding_case WHERE id = :id")
-			.param("id", id)
-			.query { rs, _ -> rs.toCase() }
-			.optional()
-			.orElse(null)
+	override fun findById(id: UUID): OnboardingCase? = caseRepository.findById(id).orElse(null)?.toDomain()
 
 	override fun findByCustomerId(customerId: UUID): OnboardingCase? =
-		jdbc
-			.sql("SELECT * FROM onboarding_case WHERE customer_id = :customerId ORDER BY created_at DESC LIMIT 1")
-			.param("customerId", customerId)
-			.query { rs, _ -> rs.toCase() }
-			.optional()
-			.orElse(null)
+		caseRepository.findTopByCustomerIdOrderByCreatedAtDesc(customerId)?.toDomain()
 
-	override fun findAllForDashboard(): List<OnboardingCase> =
-		jdbc
-			.sql("SELECT * FROM onboarding_case ORDER BY updated_at DESC")
-			.query { rs, _ -> rs.toCase() }
-			.list()
+	override fun findAllForDashboard(): List<OnboardingCase> = caseRepository.findAllForDashboard().map { it.toDomain() }
 
 	override fun saveIntake(intake: IntakeResponse): IntakeResponse {
 		val exists =
@@ -144,19 +131,16 @@ class CaseJdbcAdapter(
 			.orElse(null)
 
 	override fun findCaseEvents(caseId: UUID): List<Map<String, Any>> =
-		jdbc
-			.sql("SELECT * FROM case_event WHERE case_id = :caseId ORDER BY created_at")
-			.param("caseId", caseId)
-			.query { rs, _ ->
-				mapOf<String, Any>(
-					"id" to rs.getString("id"),
-					"eventType" to rs.getString("event_type"),
-					"actorType" to rs.getString("actor_type"),
-					"actorId" to (rs.getString("actor_id") ?: ""),
-					"payload" to rs.getString("payload"),
-					"createdAt" to rs.getString("created_at"),
-				)
-			}.list()
+		caseEventRepository.findByCaseIdOrderByCreatedAt(caseId).map { entity ->
+			mapOf<String, Any>(
+				"id" to entity.id.toString(),
+				"eventType" to entity.eventType,
+				"actorType" to entity.actorType,
+				"actorId" to (entity.actorId?.toString() ?: ""),
+				"payload" to MAPPER.writeValueAsString(entity.payload),
+				"createdAt" to (entity.createdAt?.toString() ?: ""),
+			)
+		}
 
 	override fun createDocumentsForCase(
 		caseId: UUID,
@@ -188,26 +172,23 @@ class CaseJdbcAdapter(
 			.query(Int::class.java)
 			.single()
 
-	private fun ResultSet.toCase(): OnboardingCase {
-		val servicesArray = getArray("services")
-		val sectorsArray = getArray("sectors")
-		return OnboardingCase(
-			id = UUID.fromString(getString("id")),
-			customerId = UUID.fromString(getString("customer_id")),
-			status = getString("status"),
-			closeReason = getString("close_reason"),
-			revisionRequestedFrom = getString("revision_requested_from"),
-			entityCode = getString("entity_code"),
-			services = servicesArray?.toStringList() ?: emptyList(),
-			sectors = sectorsArray?.toStringList() ?: emptyList(),
-			segmentMeta = MAPPER.readValue(getString("segment_meta") ?: "{}", MAP_TYPE),
-			pinnedQuestionIds = MAPPER.readValue(getString("pinned_question_ids") ?: "{}", MAP_TYPE),
-			assigneeStaffId = getString("assignee_staff_id")?.let { UUID.fromString(it) },
-			lastCustomerActionAt = getObject("last_customer_action_at", OffsetDateTime::class.java),
-			createdAt = getObject("created_at", OffsetDateTime::class.java),
-			updatedAt = getObject("updated_at", OffsetDateTime::class.java),
+	private fun OnboardingCaseJdbcEntity.toDomain() =
+		OnboardingCase(
+			id = id,
+			customerId = customerId,
+			status = status,
+			closeReason = closeReason,
+			revisionRequestedFrom = revisionRequestedFrom,
+			entityCode = entityCode,
+			services = services,
+			sectors = sectors,
+			segmentMeta = segmentMeta,
+			pinnedQuestionIds = pinnedQuestionIds,
+			assigneeStaffId = assigneeStaffId,
+			lastCustomerActionAt = lastCustomerActionAt,
+			createdAt = createdAt ?: OffsetDateTime.now(),
+			updatedAt = updatedAt ?: OffsetDateTime.now(),
 		)
-	}
 
 	private fun ResultSet.toIntake(): IntakeResponse =
 		IntakeResponse(
@@ -219,10 +200,6 @@ class CaseJdbcAdapter(
 			savedAt = getObject("saved_at", OffsetDateTime::class.java),
 			submittedAt = getObject("submitted_at", OffsetDateTime::class.java),
 		)
-
-	private fun java.sql.Array.toStringList(): List<String> =
-		@Suppress("UNCHECKED_CAST")
-		(array as? Array<Any?>)?.filterNotNull()?.map { it.toString() } ?: emptyList()
 
 	private fun List<String>.toPgArray(): String = "{${joinToString(",") { it.replace(",", "\\,") }}}"
 }
