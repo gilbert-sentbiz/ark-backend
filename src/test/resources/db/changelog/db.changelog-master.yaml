@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/sql/V001__extensions.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/sql/V002__schema.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/sql/V003__seed.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/sql/V004__auth.sql
+      relativeToChangelogFile: false
