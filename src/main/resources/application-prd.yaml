@@ -1,0 +1,13 @@
+# Secrets Manager: sentbiz/prd/datasource
+# Keys: DB_URL, DB_USERNAME, DB_PASSWORD, REDIS_HOST, REDIS_PORT,
+#        S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY
+arc:
+  secrets:
+    manager:
+      secret-id: sentbiz/prd/datasource
+      region: ap-northeast-2
+
+spring:
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
