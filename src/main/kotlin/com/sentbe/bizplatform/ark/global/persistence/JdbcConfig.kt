@@ -10,12 +10,18 @@ import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration
 import org.springframework.data.jdbc.repository.config.EnableJdbcAuditing
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories
 import java.sql.Timestamp
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 @ReadingConverter
 class TimestampToOffsetDateTimeConverter : Converter<Timestamp, OffsetDateTime> {
 	override fun convert(source: Timestamp): OffsetDateTime = source.toInstant().atOffset(ZoneOffset.UTC)
+}
+
+@ReadingConverter
+class LocalDateTimeToOffsetDateTimeConverter : Converter<LocalDateTime, OffsetDateTime> {
+	override fun convert(source: LocalDateTime): OffsetDateTime = source.atOffset(ZoneOffset.UTC)
 }
 
 @ReadingConverter
@@ -37,6 +43,7 @@ class JdbcConfig : AbstractJdbcConfiguration() {
 				JsonbToListConverter(),
 				ArrayToStringListConverter(),
 				TimestampToOffsetDateTimeConverter(),
+				LocalDateTimeToOffsetDateTimeConverter(),
 				PGobjectToStringConverter(),
 			),
 		)
