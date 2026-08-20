@@ -5,10 +5,6 @@ spring:
     password: ${DB_PASSWORD:ark}
     driver-class-name: org.postgresql.Driver
 
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-    enabled: true
-
   data:
     redis:
       host: ${REDIS_HOST:localhost}

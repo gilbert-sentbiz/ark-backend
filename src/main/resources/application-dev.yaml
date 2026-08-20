@@ -8,6 +8,3 @@ ark:
       region: ap-northeast-2
 
 spring:
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-    enabled: true
