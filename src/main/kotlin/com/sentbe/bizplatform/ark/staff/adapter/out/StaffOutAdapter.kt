@@ -5,6 +5,7 @@ import com.sentbe.bizplatform.ark.staff.application.domain.StaffSession
 import com.sentbe.bizplatform.ark.staff.application.port.out.StaffOutPort
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @Component
 class StaffOutAdapter(
@@ -27,7 +28,7 @@ class StaffOutAdapter(
 			name = name,
 			role = role,
 			isActive = isActive,
-			createdAt = createdAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 		)
 
 	private fun StaffSession.toEntity() =

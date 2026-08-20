@@ -6,6 +6,7 @@ import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.annotation.ReadOnlyProperty
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -25,8 +26,8 @@ data class OnboardingCaseJdbcEntity(
 	@Column("pinned_question_ids") val pinnedQuestionIds: Map<String, Any> = emptyMap(),
 	@Column("assignee_staff_id") val assigneeStaffId: UUID? = null,
 	@Column("last_customer_action_at") val lastCustomerActionAt: OffsetDateTime? = null,
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
-	@LastModifiedDate @Column("updated_at") @ReadOnlyProperty val updatedAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
+	@LastModifiedDate @Column("updated_at") @ReadOnlyProperty val updatedAt: Instant? = null,
 )
 
 @Table("case_event")
@@ -37,5 +38,5 @@ data class CaseEventJdbcEntity(
 	@Column("actor_type") val actorType: String,
 	@Column("actor_id") val actorId: UUID? = null,
 	@Column("payload") val payload: Map<String, Any> = emptyMap(),
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
 )

@@ -6,6 +6,7 @@ import com.sentbe.bizplatform.ark.case.application.port.out.CaseOutPort
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 private val MAPPER = ObjectMapper().findAndRegisterModules()
@@ -133,8 +134,8 @@ class CaseOutAdapter(
 			pinnedQuestionIds = pinnedQuestionIds,
 			assigneeStaffId = assigneeStaffId,
 			lastCustomerActionAt = lastCustomerActionAt,
-			createdAt = createdAt ?: OffsetDateTime.now(),
-			updatedAt = updatedAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
+			updatedAt = updatedAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 		)
 
 	private fun List<String>.toPgArray(): String = "{${joinToString(",") { it.replace(",", "\\,") }}}"

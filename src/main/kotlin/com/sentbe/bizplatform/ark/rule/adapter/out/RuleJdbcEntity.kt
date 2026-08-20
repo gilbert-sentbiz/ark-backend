@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.ReadOnlyProperty
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -18,7 +19,7 @@ data class SegmentJdbcEntity(
 	@Column("classification_trigger") val classificationTrigger: String? = null,
 	@Column("question_overrides") val questionOverrides: String? = null,
 	@Column("doc_overrides") val docOverrides: String? = null,
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
 	@Column("deactivated_at") val deactivatedAt: OffsetDateTime? = null,
 )
 
@@ -40,7 +41,7 @@ data class QuestionJdbcEntity(
 	@Column("display_order") val displayOrder: Int = 0,
 	@Column("replaces_question_id") val replacesQuestionId: UUID? = null,
 	@Column("created_by_staff_id") val createdByStaffId: UUID? = null,
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
 	@Column("deactivated_at") val deactivatedAt: OffsetDateTime? = null,
 )
 
@@ -56,6 +57,6 @@ data class DocTemplateJdbcEntity(
 	// jsonb — raw String
 	@Column("condition") val condition: String? = null,
 	@Column("guide") val guide: String? = null,
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
 	@Column("deactivated_at") val deactivatedAt: OffsetDateTime? = null,
 )

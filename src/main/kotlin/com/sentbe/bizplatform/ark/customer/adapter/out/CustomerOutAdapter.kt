@@ -5,6 +5,7 @@ import com.sentbe.bizplatform.ark.customer.application.domain.CustomerSession
 import com.sentbe.bizplatform.ark.customer.application.port.out.CustomerOutPort
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @Component
 class CustomerOutAdapter(
@@ -28,7 +29,7 @@ class CustomerOutAdapter(
 			businessRegNo = businessRegNo,
 			companyName = companyName,
 			contactName = contactName,
-			createdAt = createdAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 		)
 
 	private fun Customer.toEntity() =
@@ -48,7 +49,7 @@ class CustomerOutAdapter(
 			customerId = customerId,
 			token = token,
 			expiresAt = expiresAt,
-			createdAt = createdAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 		)
 
 	private fun CustomerSession.toEntity() =

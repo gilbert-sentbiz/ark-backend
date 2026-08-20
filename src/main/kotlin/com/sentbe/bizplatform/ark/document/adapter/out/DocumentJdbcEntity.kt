@@ -6,6 +6,7 @@ import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.annotation.ReadOnlyProperty
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -19,8 +20,8 @@ data class DocumentJdbcEntity(
 	@Column("status") val status: String,
 	@Column("is_required") val isRequired: Boolean,
 	@Column("is_conditional") val isConditional: Boolean,
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
-	@LastModifiedDate @Column("updated_at") @ReadOnlyProperty val updatedAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
+	@LastModifiedDate @Column("updated_at") @ReadOnlyProperty val updatedAt: Instant? = null,
 )
 
 @Table("document_file")
@@ -34,7 +35,7 @@ data class DocumentFileJdbcEntity(
 	@Column("uploader_type") val uploaderType: String,
 	@Column("uploader_staff_id") val uploaderStaffId: UUID? = null,
 	@Column("is_latest") val isLatest: Boolean = true,
-	@CreatedDate @Column("uploaded_at") @ReadOnlyProperty val uploadedAt: OffsetDateTime? = null,
+	@CreatedDate @Column("uploaded_at") @ReadOnlyProperty val uploadedAt: Instant? = null,
 )
 
 @Table("revision_request")
@@ -44,6 +45,6 @@ data class RevisionRequestJdbcEntity(
 	@Column("reason") val reason: String,
 	@Column("requested_by_staff_id") val requestedByStaffId: UUID,
 	@Column("requested_from_status") val requestedFromStatus: String,
-	@CreatedDate @Column("requested_at") @ReadOnlyProperty val requestedAt: OffsetDateTime? = null,
+	@CreatedDate @Column("requested_at") @ReadOnlyProperty val requestedAt: Instant? = null,
 	@Column("resolved_at") val resolvedAt: OffsetDateTime? = null,
 )

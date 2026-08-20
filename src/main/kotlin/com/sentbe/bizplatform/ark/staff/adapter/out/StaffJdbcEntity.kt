@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.ReadOnlyProperty
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -15,7 +16,7 @@ data class StaffJdbcEntity(
 	@Column("name") val name: String,
 	@Column("role") val role: String,
 	@Column("is_active") val isActive: Boolean = true,
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
 )
 
 @Table("staff_session")
@@ -24,5 +25,5 @@ data class StaffSessionJdbcEntity(
 	@Column("staff_id") val staffId: UUID,
 	@Column("token") val token: String,
 	@Column("expires_at") val expiresAt: OffsetDateTime,
-	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: OffsetDateTime? = null,
+	@CreatedDate @Column("created_at") @ReadOnlyProperty val createdAt: Instant? = null,
 )

@@ -8,6 +8,7 @@ import com.sentbe.bizplatform.ark.rule.application.domain.Segment
 import com.sentbe.bizplatform.ark.rule.application.port.out.RuleQueryPort
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 private val MAPPER = ObjectMapper().findAndRegisterModules()
 private val LIST_ANY = object : TypeReference<List<Any>>() {}
@@ -34,7 +35,7 @@ class RuleQueryAdapter(
 			classificationTrigger = classificationTrigger?.parseList(),
 			questionOverrides = questionOverrides?.parseList(),
 			docOverrides = docOverrides?.parseList(),
-			createdAt = createdAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 			deactivatedAt = deactivatedAt,
 		)
 
@@ -55,7 +56,7 @@ class RuleQueryAdapter(
 			displayOrder = displayOrder,
 			replacesQuestionId = replacesQuestionId,
 			createdByStaffId = createdByStaffId,
-			createdAt = createdAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 			deactivatedAt = deactivatedAt,
 		)
 
@@ -70,7 +71,7 @@ class RuleQueryAdapter(
 			isConditional = isConditional,
 			condition = condition?.parseMap(),
 			guide = guide,
-			createdAt = createdAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 			deactivatedAt = deactivatedAt,
 		)
 

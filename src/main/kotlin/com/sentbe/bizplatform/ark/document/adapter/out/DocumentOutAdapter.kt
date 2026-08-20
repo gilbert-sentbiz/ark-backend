@@ -8,6 +8,7 @@ import com.sentbe.bizplatform.ark.document.application.port.out.DocumentOutPort
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Component
@@ -119,8 +120,8 @@ class DocumentOutAdapter(
 			status = status,
 			isRequired = isRequired,
 			isConditional = isConditional,
-			createdAt = createdAt ?: OffsetDateTime.now(),
-			updatedAt = updatedAt ?: OffsetDateTime.now(),
+			createdAt = createdAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
+			updatedAt = updatedAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 		)
 
 	private fun DocumentFileJdbcEntity.toDomain() =
@@ -134,7 +135,7 @@ class DocumentOutAdapter(
 			uploaderType = uploaderType,
 			uploaderStaffId = uploaderStaffId,
 			isLatest = isLatest,
-			uploadedAt = uploadedAt ?: OffsetDateTime.now(),
+			uploadedAt = uploadedAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 		)
 
 	private fun RevisionRequestJdbcEntity.toDomain() =
@@ -144,7 +145,7 @@ class DocumentOutAdapter(
 			reason = reason,
 			requestedByStaffId = requestedByStaffId,
 			requestedFromStatus = requestedFromStatus,
-			requestedAt = requestedAt ?: OffsetDateTime.now(),
+			requestedAt = requestedAt?.atOffset(ZoneOffset.UTC) ?: OffsetDateTime.now(),
 			resolvedAt = resolvedAt,
 		)
 }
