@@ -1,7 +1,9 @@
-package com.sentbe.bizplatform.ark.case.adapter.input
+package com.sentbe.bizplatform.ark.case.adapter.`in`
 
-import com.sentbe.bizplatform.ark.case.application.port.input.CaseUseCase
+import com.sentbe.bizplatform.ark.case.application.port.`in`.CasePort
 import com.sentbe.bizplatform.ark.global.auth.AuthContext
+import com.sentbe.bizplatform.ark.global.exception.ArkException
+import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -12,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -51,8 +52,8 @@ data class CloseBody(
 @Tag(name = "Internal Case", description = "내부 케이스 관리 API")
 @RestController
 @RequestMapping("/internal/cases")
-class InternalCaseController(
-	private val service: CaseUseCase,
+class InternalCaseAdapter(
+	private val service: CasePort,
 ) {
 	@Operation(summary = "I1 내부 케이스 목록")
 	@GetMapping
@@ -128,5 +129,5 @@ class InternalCaseController(
 
 	private fun requireStaff() =
 		AuthContext.staff
-			?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "직원 인증이 필요합니다")
+			?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 }

@@ -1,13 +1,14 @@
 package com.sentbe.bizplatform.ark.document
 
 import com.sentbe.bizplatform.ark.case.application.domain.CaseStatus
-import com.sentbe.bizplatform.ark.document.application.port.input.DocumentUseCase
+import com.sentbe.bizplatform.ark.document.application.port.`in`.DocumentPort
 import com.sentbe.bizplatform.ark.document.application.service.S3StorageService
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedCustomer
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedStaff
+import com.sentbe.bizplatform.ark.global.exception.ArkException
 import com.sentbe.bizplatform.ark.support.ArkTestContainerInitializer
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -17,18 +18,17 @@ import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
-import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 @SpringBootTest
 @ActiveProfiles("local")
 @ContextConfiguration(initializers = [ArkTestContainerInitializer::class])
-class DocumentServiceIntegrationTest : DescribeSpec() {
+class DocumentServiceIntegrationTest : FunSpec() {
 	@MockitoBean
 	lateinit var s3StorageService: S3StorageService
 
 	@Autowired
-	lateinit var documentUseCase: DocumentUseCase
+	lateinit var documentUseCase: DocumentPort
 
 	@Autowired
 	lateinit var jdbc: JdbcClient
@@ -44,8 +44,8 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
 	init {
 		beforeEach { cleanup() }
 
-		describe("파일 업로드 — MVP 1파일 제한 불변식 (PI-149)") {
-			it("REQUESTED 상태의 서류는 업로드에 성공하고 SUBMITTED로 변경된다") {
+		context("파일 업로드 — MVP 1파일 제한 불변식 (PI-149)") {
+			test("REQUESTED 상태의 서류는 업로드에 성공하고 SUBMITTED로 변경된다") {
 				val (customerId, documentId) = setupDocument("REQUESTED")
 				val customer = AuthenticatedCustomer(customerId, "cust@test.com")
 				val file = MockMultipartFile("file", "doc.pdf", "application/pdf", ByteArray(100))
@@ -54,7 +54,7 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
 				detail.document.status shouldBe "SUBMITTED"
 			}
 
-			it("이미 최신 파일이 있으면 CONFLICT를 던진다 (PI-149 핵심 불변식)") {
+			test("이미 최신 파일이 있으면 CONFLICT를 던진다 (PI-149 핵심 불변식)") {
 				val (customerId, documentId) = setupDocument("REQUESTED")
 				val customer = AuthenticatedCustomer(customerId, "cust@test.com")
 				val file = MockMultipartFile("file", "doc.pdf", "application/pdf", ByteArray(100))
@@ -62,47 +62,47 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
 				documentUseCase.uploadFile(documentId, file, customer)
 
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						documentUseCase.uploadFile(documentId, file, customer)
 					}
-				ex.statusCode shouldBe HttpStatus.CONFLICT
+				ex.errorCode.httpStatus shouldBe HttpStatus.CONFLICT
 			}
 
-			it("SUBMITTED 상태의 서류는 CONFLICT를 던진다") {
+			test("SUBMITTED 상태의 서류는 CONFLICT를 던진다") {
 				val (customerId, documentId) = setupDocument("SUBMITTED")
 				val customer = AuthenticatedCustomer(customerId, "cust@test.com")
 				val file = MockMultipartFile("file", "doc.pdf", "application/pdf", ByteArray(100))
 
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						documentUseCase.uploadFile(documentId, file, customer)
 					}
-				ex.statusCode shouldBe HttpStatus.CONFLICT
+				ex.errorCode.httpStatus shouldBe HttpStatus.CONFLICT
 			}
 		}
 
-		describe("파일 형식 검증") {
-			it("허용되지 않는 MIME 타입이면 BAD_REQUEST를 던진다") {
+		context("파일 형식 검증") {
+			test("허용되지 않는 MIME 타입이면 BAD_REQUEST를 던진다") {
 				val (customerId, documentId) = setupDocument("REQUESTED")
 				val customer = AuthenticatedCustomer(customerId, "cust@test.com")
 				val file = MockMultipartFile("file", "doc.exe", "application/octet-stream", ByteArray(100))
 
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						documentUseCase.uploadFile(documentId, file, customer)
 					}
-				ex.statusCode shouldBe HttpStatus.BAD_REQUEST
+				ex.errorCode.httpStatus shouldBe HttpStatus.BAD_REQUEST
 			}
 		}
 
-		describe("보완 요청 플로우 (PI-147)") {
-			it("직원이 SUBMITTED 서류를 반려하면 REVISION_REQUIRED로 변경된다") {
+		context("보완 요청 플로우 (PI-147)") {
+			test("직원이 SUBMITTED 서류를 반려하면 REVISION_REQUIRED로 변경된다") {
 				val (_, documentId) = setupDocument("SUBMITTED")
 				val detail = documentUseCase.requestRevision(documentId, opsStaff, "서류 내용 불충분")
 				detail.document.status shouldBe "REVISION_REQUIRED"
 			}
 
-			it("REVISION_REQUIRED 서류에 파일 업로드 시 SUBMITTED로 전환된다") {
+			test("REVISION_REQUIRED 서류에 파일 업로드 시 SUBMITTED로 전환된다") {
 				val (customerId, documentId) = setupDocument("REVISION_REQUIRED", withRevision = true)
 				val customer = AuthenticatedCustomer(customerId, "cust@test.com")
 				val file = MockMultipartFile("file", "doc.pdf", "application/pdf", ByteArray(100))
@@ -111,7 +111,7 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
 				detail.document.status shouldBe "SUBMITTED"
 			}
 
-			it("업로드된 파일이 있는 REVISION_REQUIRED 서류도 재업로드에 성공한다 (PI-143)") {
+			test("업로드된 파일이 있는 REVISION_REQUIRED 서류도 재업로드에 성공한다 (PI-143)") {
 				val (customerId, documentId) = setupDocument("REQUESTED")
 				val customer = AuthenticatedCustomer(customerId, "cust@test.com")
 				val file = MockMultipartFile("file", "doc.pdf", "application/pdf", ByteArray(100))
@@ -123,13 +123,13 @@ class DocumentServiceIntegrationTest : DescribeSpec() {
 				resubmit.document.status shouldBe "SUBMITTED"
 			}
 
-			it("사유 없이 반려하면 BAD_REQUEST를 던진다") {
+			test("사유 없이 반려하면 BAD_REQUEST를 던진다") {
 				val (_, documentId) = setupDocument("SUBMITTED")
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						documentUseCase.requestRevision(documentId, opsStaff, "  ")
 					}
-				ex.statusCode shouldBe HttpStatus.BAD_REQUEST
+				ex.errorCode.httpStatus shouldBe HttpStatus.BAD_REQUEST
 			}
 		}
 	}

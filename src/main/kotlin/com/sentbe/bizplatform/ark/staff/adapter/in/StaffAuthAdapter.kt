@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.ark.staff.adapter.input
+package com.sentbe.bizplatform.ark.staff.adapter.`in`
 
-import com.sentbe.bizplatform.ark.staff.application.port.input.StaffAuthUseCase
+import com.sentbe.bizplatform.ark.staff.application.port.`in`.StaffAuthPort
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
@@ -21,8 +21,8 @@ data class StaffTokenResponse(
 @RestController
 @RequestMapping("/internal/auth")
 @Profile("local")
-class StaffAuthController(
-	private val useCase: StaffAuthUseCase,
+class StaffAuthAdapter(
+	private val useCase: StaffAuthPort,
 ) {
 	@Operation(summary = "I7 내부 SSO 목 로그인 (local)")
 	@PostMapping("/mock-login")

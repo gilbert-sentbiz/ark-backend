@@ -3,19 +3,19 @@ package com.sentbe.bizplatform.ark.case.application.service
 import com.sentbe.bizplatform.ark.case.application.domain.CaseStatus
 import com.sentbe.bizplatform.ark.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.ark.case.application.domain.OnboardingCase
-import com.sentbe.bizplatform.ark.case.application.port.input.CaseUseCase
+import com.sentbe.bizplatform.ark.case.application.port.`in`.CasePort
 import com.sentbe.bizplatform.ark.case.application.port.out.CaseOutPort
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedStaff
 import com.sentbe.bizplatform.ark.global.event.Actor
 import com.sentbe.bizplatform.ark.global.event.ActorType
 import com.sentbe.bizplatform.ark.global.event.CaseEventAppender
 import com.sentbe.bizplatform.ark.global.event.EventType
+import com.sentbe.bizplatform.ark.global.exception.ArkException
+import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import com.sentbe.bizplatform.ark.intake.application.port.out.IntakeOutPort
-import com.sentbe.bizplatform.ark.rule.application.port.out.RulePort
-import org.springframework.http.HttpStatus
+import com.sentbe.bizplatform.ark.rule.application.port.`in`.RulePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 @Service
@@ -25,12 +25,12 @@ class CaseService(
 	private val rulePort: RulePort,
 	private val classificationService: ClassificationService,
 	private val eventAppender: CaseEventAppender,
-) : CaseUseCase {
+) : CasePort {
 	@Transactional
 	override fun createCase(customerId: UUID): OnboardingCase {
 		val existing = adapter.findByCustomerId(customerId)
 		if (existing != null && existing.status !in setOf(CaseStatus.COMPLETED, CaseStatus.CLOSED)) {
-			throw ResponseStatusException(HttpStatus.CONFLICT, "진행 중인 케이스가 이미 있습니다")
+			throw ArkException(ArkGlobalErrorCode.CONFLICT)
 		}
 
 		val allRules = rulePort.getActiveRules(null)
@@ -83,11 +83,11 @@ class CaseService(
 		val case = requireCase(caseId)
 		requireCustomerOwns(case, customerId)
 		if (case.status != CaseStatus.INQUIRY_RECEIVED) {
-			throw ResponseStatusException(HttpStatus.CONFLICT, "1차 인테이크를 제출할 수 없는 상태입니다")
+			throw ArkException(ArkGlobalErrorCode.CONFLICT)
 		}
 		val existingIntake = intakePort.findByCaseIdAndPhase(caseId, "first")
 		if (existingIntake?.status == "submitted") {
-			throw ResponseStatusException(HttpStatus.CONFLICT, "1차 인테이크가 이미 제출되었습니다")
+			throw ArkException(ArkGlobalErrorCode.CONFLICT)
 		}
 
 		val intake =
@@ -139,11 +139,11 @@ class CaseService(
 		val case = requireCase(caseId)
 		requireCustomerOwns(case, customerId)
 		if (case.status != CaseStatus.INQUIRY_RECEIVED) {
-			throw ResponseStatusException(HttpStatus.CONFLICT, "2차 인테이크를 제출할 수 없는 상태입니다")
+			throw ArkException(ArkGlobalErrorCode.CONFLICT)
 		}
 		val pinnedSecond = case.pinnedQuestionIds["second"]
 		if (pinnedSecond == null) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "1차 인테이크를 먼저 제출해야 합니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 
 		val intake =
@@ -181,7 +181,7 @@ class CaseService(
 				CaseStatus.DOCUMENT_SCREENING_REQUIRED -> Pair(CaseStatus.APPROVAL_REVIEW_REQUIRED, "OPS")
 				CaseStatus.APPROVAL_REVIEW_REQUIRED -> Pair(CaseStatus.ACCOUNT_SETUP_REQUIRED, "COMPLIANCE")
 				CaseStatus.ACCOUNT_SETUP_REQUIRED -> Pair(CaseStatus.COMPLETED, "OPS")
-				else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이 상태에서는 전진할 수 없습니다: ${case.status}")
+				else -> throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 			}
 		requireRole(staff, requiredRole)
 
@@ -204,10 +204,10 @@ class CaseService(
 	): OnboardingCase {
 		val case = requireCase(caseId)
 		if (case.status in setOf(CaseStatus.COMPLETED, CaseStatus.CLOSED)) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 종료된 케이스입니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 		if (reason !in setOf("DROPPED", "EXITED")) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "종료 사유는 DROPPED 또는 EXITED여야 합니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 
 		val updated = case.copy(status = CaseStatus.CLOSED, closeReason = reason)
@@ -221,8 +221,7 @@ class CaseService(
 		return saved
 	}
 
-	override fun getCase(caseId: UUID): OnboardingCase =
-		adapter.findById(caseId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
+	override fun getCase(caseId: UUID): OnboardingCase = adapter.findById(caseId) ?: throw ArkException(ArkGlobalErrorCode.RESOURCE_NOT_FOUND)
 
 	override fun getCaseTimeline(caseId: UUID): List<Map<String, Any>> {
 		requireCase(caseId)
@@ -244,14 +243,14 @@ class CaseService(
 		val case = requireCase(caseId)
 		requireCustomerOwns(case, customerId)
 		if (case.status != CaseStatus.REVISION_REQUESTED) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "보완 요청 중인 케이스가 아닙니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 		if (adapter.countOpenRevisionsByCaseId(caseId) > 0) {
-			throw ResponseStatusException(HttpStatus.CONFLICT, "미해결 보완 요청이 남아 있습니다")
+			throw ArkException(ArkGlobalErrorCode.CONFLICT)
 		}
 		val returnTo =
 			case.revisionRequestedFrom
-				?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "복귀 상태 정보가 없습니다")
+				?: throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 
 		val updated = case.copy(status = returnTo, revisionRequestedFrom = null)
 		val saved = adapter.save(updated)
@@ -265,14 +264,14 @@ class CaseService(
 	}
 
 	private fun requireCase(caseId: UUID): OnboardingCase =
-		adapter.findById(caseId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
+		adapter.findById(caseId) ?: throw ArkException(ArkGlobalErrorCode.RESOURCE_NOT_FOUND)
 
 	private fun requireCustomerOwns(
 		case: OnboardingCase,
 		customerId: UUID,
 	) {
 		if (case.customerId != customerId) {
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다")
+			throw ArkException(ArkGlobalErrorCode.FORBIDDEN)
 		}
 	}
 
@@ -281,7 +280,7 @@ class CaseService(
 		vararg roles: String,
 	) {
 		if (staff.role !in roles) {
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "이 작업에 필요한 역할: ${roles.joinToString()}")
+			throw ArkException(ArkGlobalErrorCode.FORBIDDEN)
 		}
 	}
 

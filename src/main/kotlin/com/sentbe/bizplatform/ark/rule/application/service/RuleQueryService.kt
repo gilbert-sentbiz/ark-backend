@@ -4,16 +4,14 @@ import com.sentbe.bizplatform.ark.rule.application.domain.ActiveRules
 import com.sentbe.bizplatform.ark.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.ark.rule.application.domain.Question
 import com.sentbe.bizplatform.ark.rule.application.domain.Segment
-import com.sentbe.bizplatform.ark.rule.application.port.input.RuleUseCase
-import com.sentbe.bizplatform.ark.rule.application.port.out.RulePort
+import com.sentbe.bizplatform.ark.rule.application.port.`in`.RulePort
 import com.sentbe.bizplatform.ark.rule.application.port.out.RuleQueryPort
 import org.springframework.stereotype.Service
 
 @Service
 class RuleQueryService(
 	private val port: RuleQueryPort,
-) : RulePort,
-	RuleUseCase {
+) : RulePort {
 	override fun getActiveRules(segmentCode: String?): ActiveRules {
 		val segments = port.findActiveSegments()
 		val allQuestions = port.findActiveQuestions()

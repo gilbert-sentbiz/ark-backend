@@ -1,8 +1,10 @@
-package com.sentbe.bizplatform.ark.case.adapter.input
+package com.sentbe.bizplatform.ark.case.adapter.`in`
 
 import com.sentbe.bizplatform.ark.case.application.domain.OnboardingCase
-import com.sentbe.bizplatform.ark.case.application.port.input.CaseUseCase
+import com.sentbe.bizplatform.ark.case.application.port.`in`.CasePort
 import com.sentbe.bizplatform.ark.global.auth.AuthContext
+import com.sentbe.bizplatform.ark.global.exception.ArkException
+import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -13,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -36,8 +37,8 @@ data class CaseResponse(
 @Tag(name = "Case", description = "고객 케이스 API")
 @RestController
 @RequestMapping("/cases")
-class CaseController(
-	private val service: CaseUseCase,
+class CaseAdapter(
+	private val service: CasePort,
 ) {
 	@Operation(summary = "C1 케이스 생성", description = "고객 OTP 세션으로 케이스를 생성한다. 1계정 1활성 케이스; 위반 시 409.")
 	@PostMapping
@@ -45,7 +46,7 @@ class CaseController(
 	fun createCase(): CaseResponse {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		return service.createCase(customer.id).toResponse()
 	}
 
@@ -56,10 +57,10 @@ class CaseController(
 	): CaseResponse {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		val case = service.getCase(id)
 		if (case.customerId != customer.id) {
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다")
+			throw ArkException(ArkGlobalErrorCode.FORBIDDEN)
 		}
 		return case.toResponse()
 	}
@@ -74,7 +75,7 @@ class CaseController(
 	): CaseResponse {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		return service.submitFirstIntake(id, customer.id, body.answers).toResponse()
 	}
 
@@ -88,7 +89,7 @@ class CaseController(
 	): CaseResponse {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		return service.submitSecondIntake(id, customer.id, body.answers).toResponse()
 	}
 
@@ -100,14 +101,14 @@ class CaseController(
 	): IntakeDto {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		val case = service.getCase(id)
 		if (case.customerId != customer.id) {
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다")
+			throw ArkException(ArkGlobalErrorCode.FORBIDDEN)
 		}
 		val intake =
 			service.getIntake(id, phase)
-				?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "인테이크 응답을 찾을 수 없습니다")
+				?: throw ArkException(ArkGlobalErrorCode.RESOURCE_NOT_FOUND)
 		return IntakeDto(
 			caseId = intake.caseId,
 			phase = intake.phase,
@@ -125,7 +126,7 @@ class CaseController(
 	): CaseResponse {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		return service.resubmit(id, customer.id).toResponse()
 	}
 }

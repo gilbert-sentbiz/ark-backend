@@ -1,6 +1,6 @@
-package com.sentbe.bizplatform.ark.customer.adapter.input
+package com.sentbe.bizplatform.ark.customer.adapter.`in`
 
-import com.sentbe.bizplatform.ark.customer.application.port.input.CustomerAuthUseCase
+import com.sentbe.bizplatform.ark.customer.application.port.`in`.CustomerAuthPort
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.PostMapping
@@ -28,8 +28,8 @@ data class TokenResponse(
 @Tag(name = "CustomerAuth", description = "고객 인증 API")
 @RestController
 @RequestMapping("/auth")
-class CustomerAuthController(
-	private val useCase: CustomerAuthUseCase,
+class CustomerAuthAdapter(
+	private val useCase: CustomerAuthPort,
 ) {
 	@Operation(summary = "C11 OTP 코드 발급")
 	@PostMapping("/otp/request")

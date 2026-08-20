@@ -1,11 +1,11 @@
-package com.sentbe.bizplatform.ark.case.application.port.input
+package com.sentbe.bizplatform.ark.case.application.port.`in`
 
 import com.sentbe.bizplatform.ark.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.ark.case.application.domain.OnboardingCase
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedStaff
 import java.util.UUID
 
-interface CaseUseCase {
+interface CasePort {
 	fun createCase(customerId: UUID): OnboardingCase
 
 	fun saveIntake(

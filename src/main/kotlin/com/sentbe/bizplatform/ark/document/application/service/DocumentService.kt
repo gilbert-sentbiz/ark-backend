@@ -5,15 +5,16 @@ import com.sentbe.bizplatform.ark.case.application.port.out.CaseOutPort
 import com.sentbe.bizplatform.ark.document.application.domain.DocumentDetail
 import com.sentbe.bizplatform.ark.document.application.domain.DocumentFile
 import com.sentbe.bizplatform.ark.document.application.domain.RevisionRequest
-import com.sentbe.bizplatform.ark.document.application.port.input.DocumentUseCase
+import com.sentbe.bizplatform.ark.document.application.port.`in`.DocumentPort
 import com.sentbe.bizplatform.ark.document.application.port.out.DocumentOutPort
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedCustomer
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedStaff
+import com.sentbe.bizplatform.ark.global.exception.ArkException
+import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.server.ResponseStatusException
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -25,13 +26,13 @@ class DocumentService(
 	private val adapter: DocumentOutPort,
 	private val storage: S3StorageService,
 	private val casePort: CaseOutPort,
-) : DocumentUseCase {
+) : DocumentPort {
 	override fun getDocuments(
 		caseId: UUID,
 		customer: AuthenticatedCustomer,
 	): List<DocumentDetail> {
-		val case = casePort.findById(caseId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
-		if (case.customerId != customer.id) throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다")
+		val case = casePort.findById(caseId) ?: throw ArkException(ArkGlobalErrorCode.RESOURCE_NOT_FOUND)
+		if (case.customerId != customer.id) throw ArkException(ArkGlobalErrorCode.FORBIDDEN)
 		return adapter.findByCaseId(caseId)
 	}
 
@@ -43,10 +44,10 @@ class DocumentService(
 	): DocumentDetail {
 		val doc = requireDocument(documentId)
 		if (doc.status !in setOf("REQUESTED", "REVISION_REQUIRED")) {
-			throw ResponseStatusException(HttpStatus.CONFLICT, "이 상태에서는 파일을 업로드할 수 없습니다: ${doc.status}")
+			throw ArkException(ArkGlobalErrorCode.CONFLICT)
 		}
 		if (doc.status != "REVISION_REQUIRED" && adapter.hasLatestFile(documentId)) {
-			throw ResponseStatusException(HttpStatus.CONFLICT, "이미 업로드된 파일이 있습니다. MVP는 서류당 1파일만 허용됩니다.")
+			throw ArkException(ArkGlobalErrorCode.CONFLICT)
 		}
 		validateFile(file)
 
@@ -98,17 +99,17 @@ class DocumentService(
 		requireRole(staff, "OPS", "COMPLIANCE", "ADMIN", "SALES")
 		val doc = requireDocument(documentId)
 		if (doc.status !in setOf("SUBMITTED", "APPROVED")) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "반려할 수 없는 상태입니다: ${doc.status}")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 		if (reason.isBlank()) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "반려 사유는 필수입니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 
 		val case =
 			casePort.findById(doc.caseId)
-				?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "케이스를 찾을 수 없습니다")
+				?: throw ArkException(ArkGlobalErrorCode.RESOURCE_NOT_FOUND)
 		if (case.status in setOf(CaseStatus.COMPLETED, CaseStatus.CLOSED)) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "종료된 케이스의 서류는 반려할 수 없습니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 
 		val caseStatusForRevision =
@@ -151,7 +152,7 @@ class DocumentService(
 		requireRole(staff, "COMPLIANCE")
 		val doc = requireDocument(documentId)
 		if (doc.status != "SUBMITTED") {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "제출된 서류만 승인할 수 있습니다: ${doc.status}")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 
 		adapter.resolveOpenRevisions(documentId)
@@ -162,17 +163,17 @@ class DocumentService(
 
 	private fun requireDocument(documentId: UUID) =
 		adapter.findById(documentId)
-			?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "서류를 찾을 수 없습니다")
+			?: throw ArkException(ArkGlobalErrorCode.RESOURCE_NOT_FOUND)
 
 	private fun validateFile(file: MultipartFile) {
 		if (file.contentType !in ALLOWED_TYPES) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "허용 형식: pdf, png, jpg")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 		if (file.size > MAX_SIZE_BYTES) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "파일 크기는 10MB를 초과할 수 없습니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 		if (file.isEmpty) {
-			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "빈 파일은 업로드할 수 없습니다")
+			throw ArkException(ArkGlobalErrorCode.INVALID_INPUT)
 		}
 	}
 
@@ -181,7 +182,7 @@ class DocumentService(
 		vararg roles: String,
 	) {
 		if (staff.role !in roles) {
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "이 작업에 필요한 역할: ${roles.joinToString()}")
+			throw ArkException(ArkGlobalErrorCode.FORBIDDEN)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package com.sentbe.bizplatform.ark.document.application.port.input
+package com.sentbe.bizplatform.ark.document.application.port.`in`
 
 import com.sentbe.bizplatform.ark.document.application.domain.DocumentDetail
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedCustomer
@@ -6,7 +6,7 @@ import com.sentbe.bizplatform.ark.global.auth.AuthenticatedStaff
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 
-interface DocumentUseCase {
+interface DocumentPort {
 	fun getDocuments(
 		caseId: UUID,
 		customer: AuthenticatedCustomer,

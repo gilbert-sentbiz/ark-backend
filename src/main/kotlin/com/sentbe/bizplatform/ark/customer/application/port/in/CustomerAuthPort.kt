@@ -1,8 +1,8 @@
-package com.sentbe.bizplatform.ark.customer.application.port.input
+package com.sentbe.bizplatform.ark.customer.application.port.`in`
 
 import java.util.UUID
 
-interface CustomerAuthUseCase {
+interface CustomerAuthPort {
 	fun requestOtp(email: String)
 
 	fun verifyOtp(

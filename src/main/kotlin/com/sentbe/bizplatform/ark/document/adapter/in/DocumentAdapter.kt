@@ -1,8 +1,10 @@
-package com.sentbe.bizplatform.ark.document.adapter.input
+package com.sentbe.bizplatform.ark.document.adapter.`in`
 
 import com.sentbe.bizplatform.ark.document.application.domain.DocumentDetail
-import com.sentbe.bizplatform.ark.document.application.port.input.DocumentUseCase
+import com.sentbe.bizplatform.ark.document.application.port.`in`.DocumentPort
 import com.sentbe.bizplatform.ark.global.auth.AuthContext
+import com.sentbe.bizplatform.ark.global.exception.ArkException
+import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -13,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.server.ResponseStatusException
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -43,8 +44,8 @@ data class DocumentResponse(
 @Tag(name = "Document", description = "케이스 서류 API")
 @RestController
 @RequestMapping("/cases/{caseId}/documents")
-class DocumentController(
-	private val service: DocumentUseCase,
+class DocumentAdapter(
+	private val service: DocumentPort,
 ) {
 	@Operation(summary = "C9 케이스 서류 목록 조회")
 	@GetMapping
@@ -53,7 +54,7 @@ class DocumentController(
 	): List<DocumentResponse> {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		return service.getDocuments(caseId, customer).map { it.toResponse() }
 	}
 
@@ -66,7 +67,7 @@ class DocumentController(
 	): DocumentResponse {
 		val customer =
 			AuthContext.customer
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "고객 인증이 필요합니다")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		return service.uploadFile(docId, file, customer).toResponse()
 	}
 }

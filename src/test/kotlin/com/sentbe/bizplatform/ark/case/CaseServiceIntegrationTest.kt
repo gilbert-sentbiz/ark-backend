@@ -1,12 +1,13 @@
 package com.sentbe.bizplatform.ark.case
 
 import com.sentbe.bizplatform.ark.case.application.domain.CaseStatus
-import com.sentbe.bizplatform.ark.case.application.port.input.CaseUseCase
+import com.sentbe.bizplatform.ark.case.application.port.`in`.CasePort
 import com.sentbe.bizplatform.ark.document.application.service.S3StorageService
 import com.sentbe.bizplatform.ark.global.auth.AuthenticatedStaff
+import com.sentbe.bizplatform.ark.global.exception.ArkException
 import com.sentbe.bizplatform.ark.support.ArkTestContainerInitializer
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -18,18 +19,17 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
-import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 @SpringBootTest
 @ActiveProfiles("local")
 @ContextConfiguration(initializers = [ArkTestContainerInitializer::class])
-class CaseServiceIntegrationTest : DescribeSpec() {
+class CaseServiceIntegrationTest : FunSpec() {
 	@MockitoBean
 	lateinit var s3StorageService: S3StorageService
 
 	@Autowired
-	lateinit var caseUseCase: CaseUseCase
+	lateinit var caseUseCase: CasePort
 
 	@Autowired
 	lateinit var jdbc: JdbcClient
@@ -56,8 +56,8 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 	init {
 		beforeEach { cleanup() }
 
-		describe("케이스 생성") {
-			it("1차 질문 ID를 pinnedQuestionIds[first]에 고정한다") {
+		context("케이스 생성") {
+			test("1차 질문 ID를 pinnedQuestionIds[first]에 고정한다") {
 				val customerId = insertCustomer()
 				val case = caseUseCase.createCase(customerId)
 
@@ -67,20 +67,20 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 				case.status shouldBe CaseStatus.INQUIRY_RECEIVED
 			}
 
-			it("진행 중인 케이스가 있으면 CONFLICT를 던진다") {
+			test("진행 중인 케이스가 있으면 CONFLICT를 던진다") {
 				val customerId = insertCustomer()
 				caseUseCase.createCase(customerId)
 
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						caseUseCase.createCase(customerId)
 					}
-				ex.statusCode shouldBe HttpStatus.CONFLICT
+				ex.errorCode.httpStatus shouldBe HttpStatus.CONFLICT
 			}
 		}
 
-		describe("소급 차단 — 룰 변경 후 기존 케이스 pinnedQuestionIds 불변") {
-			it("질문 비활성화 후 기존 케이스의 고정 ID는 그대로 유지된다") {
+		context("소급 차단 — 룰 변경 후 기존 케이스 pinnedQuestionIds 불변") {
+			test("질문 비활성화 후 기존 케이스의 고정 ID는 그대로 유지된다") {
 				val customerId = insertCustomer()
 				val case = caseUseCase.createCase(customerId)
 
@@ -107,8 +107,8 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 			}
 		}
 
-		describe("1차 인테이크 제출 — 중복 제출 불변식") {
-			it("draft 임시저장 후 1차 제출에 성공한다 (PI-139)") {
+		context("1차 인테이크 제출 — 중복 제출 불변식") {
+			test("draft 임시저장 후 1차 제출에 성공한다 (PI-139)") {
 				val customerId = insertCustomer()
 				val case = caseUseCase.createCase(customerId)
 				val answers =
@@ -126,7 +126,7 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 				secondPinned!!.size shouldBeGreaterThan 0
 			}
 
-			it("이미 제출된 상태에서 재제출하면 CONFLICT를 던진다") {
+			test("이미 제출된 상태에서 재제출하면 CONFLICT를 던진다") {
 				val customerId = insertCustomer()
 				val case = caseUseCase.createCase(customerId)
 				val answers =
@@ -139,13 +139,13 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 				caseUseCase.submitFirstIntake(case.id, customerId, answers)
 
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						caseUseCase.submitFirstIntake(case.id, customerId, answers)
 					}
-				ex.statusCode shouldBe HttpStatus.CONFLICT
+				ex.errorCode.httpStatus shouldBe HttpStatus.CONFLICT
 			}
 
-			it("1차 제출 후 2차 질문 ID가 pinnedQuestionIds[second]에 고정된다") {
+			test("1차 제출 후 2차 질문 ID가 pinnedQuestionIds[second]에 고정된다") {
 				val customerId = insertCustomer()
 				val case = caseUseCase.createCase(customerId)
 				val answers =
@@ -162,14 +162,14 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 			}
 		}
 
-		describe("상태 전이 — advanceStatus") {
-			it("SALES가 INITIAL_SCREENING → DOCUMENT_SCREENING_REQUIRED로 전진시킨다") {
+		context("상태 전이 — advanceStatus") {
+			test("SALES가 INITIAL_SCREENING → DOCUMENT_SCREENING_REQUIRED로 전진시킨다") {
 				val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
 				val advanced = caseUseCase.advanceStatus(caseId, salesStaff)
 				advanced.status shouldBe CaseStatus.DOCUMENT_SCREENING_REQUIRED
 			}
 
-			it("4단계 순차 전진이 COMPLETED로 이어진다") {
+			test("4단계 순차 전진이 COMPLETED로 이어진다") {
 				val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
 				caseUseCase.advanceStatus(caseId, salesStaff)
 				caseUseCase.advanceStatus(caseId, opsStaff)
@@ -178,27 +178,27 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 				final.status shouldBe CaseStatus.COMPLETED
 			}
 
-			it("역할이 맞지 않으면 FORBIDDEN을 던진다") {
+			test("역할이 맞지 않으면 FORBIDDEN을 던진다") {
 				val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						caseUseCase.advanceStatus(caseId, opsStaff) // SALES 역할 필요
 					}
-				ex.statusCode shouldBe HttpStatus.FORBIDDEN
+				ex.errorCode.httpStatus shouldBe HttpStatus.FORBIDDEN
 			}
 
-			it("전진 불가 상태에서는 BAD_REQUEST를 던진다") {
+			test("전진 불가 상태에서는 BAD_REQUEST를 던진다") {
 				val caseId = setupCaseWithStatus(CaseStatus.INQUIRY_RECEIVED)
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						caseUseCase.advanceStatus(caseId, salesStaff)
 					}
-				ex.statusCode shouldBe HttpStatus.BAD_REQUEST
+				ex.errorCode.httpStatus shouldBe HttpStatus.BAD_REQUEST
 			}
 		}
 
-		describe("케이스 이벤트 — append-only 불변식") {
-			it("케이스 생성 시 CASE_CREATED 이벤트 1건이 기록된다") {
+		context("케이스 이벤트 — append-only 불변식") {
+			test("케이스 생성 시 CASE_CREATED 이벤트 1건이 기록된다") {
 				val customerId = insertCustomer()
 				val case = caseUseCase.createCase(customerId)
 
@@ -207,7 +207,7 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 				events.first()["eventType"] shouldBe "CASE_CREATED"
 			}
 
-			it("상태 전이 시 이벤트가 누적되고 기존 이벤트는 삭제되지 않는다") {
+			test("상태 전이 시 이벤트가 누적되고 기존 이벤트는 삭제되지 않는다") {
 				val caseId = setupCaseWithStatus(CaseStatus.INITIAL_SCREENING)
 				val before = caseUseCase.getCaseTimeline(caseId).size
 
@@ -219,8 +219,8 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 			}
 		}
 
-		describe("케이스 재제출 — resubmit") {
-			it("미해결 보완 요청이 없으면 REVISION_REQUESTED에서 원래 상태로 복귀한다") {
+		context("케이스 재제출 — resubmit") {
+			test("미해결 보완 요청이 없으면 REVISION_REQUESTED에서 원래 상태로 복귀한다") {
 				val customerId = insertCustomer()
 				val caseId =
 					insertCaseWithStatus(
@@ -233,15 +233,15 @@ class CaseServiceIntegrationTest : DescribeSpec() {
 				result.status shouldBe CaseStatus.INITIAL_SCREENING
 			}
 
-			it("REVISION_REQUESTED 상태가 아니면 BAD_REQUEST를 던진다") {
+			test("REVISION_REQUESTED 상태가 아니면 BAD_REQUEST를 던진다") {
 				val customerId = insertCustomer()
 				val caseId = insertCaseWithStatus(customerId, CaseStatus.INITIAL_SCREENING)
 
 				val ex =
-					shouldThrow<ResponseStatusException> {
+					shouldThrow<ArkException> {
 						caseUseCase.resubmit(caseId, customerId)
 					}
-				ex.statusCode shouldBe HttpStatus.BAD_REQUEST
+				ex.errorCode.httpStatus shouldBe HttpStatus.BAD_REQUEST
 			}
 		}
 	}

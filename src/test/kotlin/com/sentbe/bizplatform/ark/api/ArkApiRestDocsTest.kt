@@ -5,7 +5,7 @@ import com.sentbe.bizplatform.ark.document.application.service.S3StorageService
 import com.sentbe.bizplatform.ark.global.auth.CustomerAuthFilter
 import com.sentbe.bizplatform.ark.global.auth.StaffAuthFilter
 import com.sentbe.bizplatform.ark.support.ArkTestContainerInitializer
-import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import jakarta.servlet.Filter
 import org.springframework.beans.factory.annotation.Autowired
@@ -33,7 +33,7 @@ import java.util.UUID
 @SpringBootTest
 @ActiveProfiles("local")
 @ContextConfiguration(initializers = [ArkTestContainerInitializer::class])
-class ArkApiRestDocsTest : DescribeSpec() {
+class ArkApiRestDocsTest : FunSpec() {
 	@MockitoBean
 	lateinit var s3StorageService: S3StorageService
 
@@ -84,8 +84,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			restDocumentation.afterTest()
 		}
 
-		describe("GET /actuator/health") {
-			it("200 OK를 반환한다") {
+		context("GET /actuator/health") {
+			test("200 OK를 반환한다") {
 				val result =
 					docsMvc
 						.perform(MockMvcRequestBuilders.get("/actuator/health"))
@@ -97,8 +97,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("GET /rules/active") {
-			it("인증된 고객에게 활성 규칙을 반환한다") {
+		context("GET /rules/active") {
+			test("인증된 고객에게 활성 규칙을 반환한다") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders
@@ -108,7 +108,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("rules-get-active"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다") {
+			test("인증 없이 요청하면 401을 반환한다") {
 				docsMvc
 					.perform(MockMvcRequestBuilders.get("/rules/active"))
 					.andExpect(MockMvcResultMatchers.status().isUnauthorized)
@@ -116,8 +116,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /cases") {
-			it("고객 인증으로 케이스를 생성하고 201 + CaseResponse를 반환한다 (PI-153 C1)") {
+		context("POST /cases") {
+			test("고객 인증으로 케이스를 생성하고 201 + CaseResponse를 반환한다 (PI-153 C1)") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders
@@ -131,13 +131,13 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("cases-create"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-153 C1)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-153 C1)") {
 				docsMvc
 					.perform(MockMvcRequestBuilders.post("/cases"))
 					.andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("이미 활성 케이스가 있으면 409를 반환한다 (PI-153 C1)") {
+			test("이미 활성 케이스가 있으면 409를 반환한다 (PI-153 C1)") {
 				// 첫 번째 생성 성공
 				docsMvc
 					.perform(
@@ -156,8 +156,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("GET /cases/{id}") {
-			it("본인 케이스를 조회하면 200 + CaseResponse를 반환한다 (PI-154 C2)") {
+		context("GET /cases/{id}") {
+			test("본인 케이스를 조회하면 200 + CaseResponse를 반환한다 (PI-154 C2)") {
 				val caseId = insertCaseForSales()
 				docsMvc
 					.perform(
@@ -170,14 +170,14 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("cases-get"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-154 C2)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-154 C2)") {
 				val caseId = insertCaseForSales()
 				docsMvc
 					.perform(MockMvcRequestBuilders.get("/cases/$caseId"))
 					.andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("타 고객의 케이스는 403을 반환한다 (PI-154 C2)") {
+			test("타 고객의 케이스는 403을 반환한다 (PI-154 C2)") {
 				val otherCaseId = insertCaseForDifferentCustomer()
 				docsMvc
 					.perform(
@@ -187,7 +187,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isForbidden)
 			}
 
-			it("존재하지 않는 케이스는 404를 반환한다 (PI-154 C2)") {
+			test("존재하지 않는 케이스는 404를 반환한다 (PI-154 C2)") {
 				val unknownId = UUID.randomUUID()
 				docsMvc
 					.perform(
@@ -198,11 +198,11 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /cases/{id}/intake/first/submit") {
+		context("POST /cases/{id}/intake/first/submit") {
 			val intakeBody =
 				"""{"answers":{"businessType":"corporation","foundingCountry":"KR","services":["remittance"]}}"""
 
-			it("1차 인테이크를 제출하면 200 + entityCode·services·pinnedQuestionIds.second를 반환한다 (PI-156 C4)") {
+			test("1차 인테이크를 제출하면 200 + entityCode·services·pinnedQuestionIds.second를 반환한다 (PI-156 C4)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(
@@ -218,7 +218,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("cases-submit-first-intake"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-156 C4)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-156 C4)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(
@@ -229,7 +229,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("이미 제출된 케이스에 재제출하면 409를 반환한다 (PI-156 C4)") {
+			test("이미 제출된 케이스에 재제출하면 409를 반환한다 (PI-156 C4)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(
@@ -250,10 +250,10 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /cases/{id}/intake/second/submit") {
+		context("POST /cases/{id}/intake/second/submit") {
 			val intakeBody = """{"answers":{"someField":"someValue"}}"""
 
-			it("2차 인테이크를 제출하면 200 + DOCUMENT_SUBMISSION_REQUIRED 상태가 되고 서류 목록이 생성된다 (PI-158 C6)") {
+			test("2차 인테이크를 제출하면 200 + DOCUMENT_SUBMISSION_REQUIRED 상태가 되고 서류 목록이 생성된다 (PI-158 C6)") {
 				val caseId = insertClassifiedCase()
 				docsMvc
 					.perform(
@@ -276,7 +276,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andExpect(MockMvcResultMatchers.jsonPath("$[0]").exists())
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-158 C6)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-158 C6)") {
 				val caseId = insertClassifiedCase()
 				docsMvc
 					.perform(
@@ -287,7 +287,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("1차 인테이크를 완료하지 않은 케이스에 제출하면 400을 반환한다 (PI-158 C6)") {
+			test("1차 인테이크를 완료하지 않은 케이스에 제출하면 400을 반환한다 (PI-158 C6)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(
@@ -300,8 +300,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("GET /cases/{id}/intake/{phase}") {
-			it("제출된 1차 인테이크를 조회하면 200 + IntakeDto를 반환한다 (PI-159 C7)") {
+		context("GET /cases/{id}/intake/{phase}") {
+			test("제출된 1차 인테이크를 조회하면 200 + IntakeDto를 반환한다 (PI-159 C7)") {
 				val caseId = insertInquiryCase()
 				insertSubmittedIntake(caseId, "first")
 				docsMvc
@@ -316,14 +316,14 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("cases-get-intake"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-159 C7)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-159 C7)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(MockMvcRequestBuilders.get("/cases/$caseId/intake/first"))
 					.andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("타 고객 케이스는 403을 반환한다 (PI-159 C7)") {
+			test("타 고객 케이스는 403을 반환한다 (PI-159 C7)") {
 				val otherCaseId = insertCaseForDifferentCustomer()
 				docsMvc
 					.perform(
@@ -333,7 +333,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isForbidden)
 			}
 
-			it("존재하지 않는 인테이크는 404를 반환한다 (PI-159 C7)") {
+			test("존재하지 않는 인테이크는 404를 반환한다 (PI-159 C7)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(
@@ -344,8 +344,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /cases/{id}/resubmit") {
-			it("보완 재제출 시 200 + revisionRequestedFrom 단계로 복귀된 CaseResponse를 반환한다 (PI-160 C8)") {
+		context("POST /cases/{id}/resubmit") {
+			test("보완 재제출 시 200 + revisionRequestedFrom 단계로 복귀된 CaseResponse를 반환한다 (PI-160 C8)") {
 				val caseId = insertRevisionCase()
 				docsMvc
 					.perform(
@@ -357,14 +357,14 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("cases-resubmit"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-160 C8)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-160 C8)") {
 				val caseId = insertRevisionCase()
 				docsMvc
 					.perform(MockMvcRequestBuilders.post("/cases/$caseId/resubmit"))
 					.andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("REVISION_REQUESTED 상태가 아닌 케이스에 재제출하면 400을 반환한다 (PI-160 C8)") {
+			test("REVISION_REQUESTED 상태가 아닌 케이스에 재제출하면 400을 반환한다 (PI-160 C8)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(
@@ -375,8 +375,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("GET /cases/{caseId}/documents") {
-			it("케이스 서류 목록을 반환하고 열린 보완만 노출한다 (PI-161 C9)") {
+		context("GET /cases/{caseId}/documents") {
+			test("케이스 서류 목록을 반환하고 열린 보완만 노출한다 (PI-161 C9)") {
 				val caseId = insertInquiryCase()
 				val docId = insertDocumentForCase(caseId)
 				insertRevisionForDocument(docId, resolved = true)
@@ -392,14 +392,14 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("cases-list-documents"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-161 C9)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-161 C9)") {
 				val caseId = insertInquiryCase()
 				docsMvc
 					.perform(MockMvcRequestBuilders.get("/cases/$caseId/documents"))
 					.andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("타 고객 케이스는 403을 반환한다 (PI-161 C9)") {
+			test("타 고객 케이스는 403을 반환한다 (PI-161 C9)") {
 				val otherCaseId = insertCaseForDifferentCustomer()
 				docsMvc
 					.perform(
@@ -410,8 +410,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /cases/{caseId}/documents/{docId}/file") {
-			it("PDF 파일 업로드 시 200 + latestFile이 있는 DocumentResponse를 반환한다 (PI-162 C10)") {
+		context("POST /cases/{caseId}/documents/{docId}/file") {
+			test("PDF 파일 업로드 시 200 + latestFile이 있는 DocumentResponse를 반환한다 (PI-162 C10)") {
 				val caseId = insertInquiryCase()
 				val docId = insertDocumentForCase(caseId)
 				val file = MockMultipartFile("file", "test.pdf", "application/pdf", ByteArray(100))
@@ -426,7 +426,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("cases-upload-document-file"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-162 C10)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-162 C10)") {
 				val caseId = insertInquiryCase()
 				val docId = insertDocumentForCase(caseId)
 				val file = MockMultipartFile("file", "test.pdf", "application/pdf", ByteArray(100))
@@ -438,7 +438,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("허용되지 않은 파일 형식 업로드 시 400을 반환한다 (PI-162 C10)") {
+			test("허용되지 않은 파일 형식 업로드 시 400을 반환한다 (PI-162 C10)") {
 				val caseId = insertInquiryCase()
 				val docId = insertDocumentForCase(caseId)
 				val file = MockMultipartFile("file", "test.txt", "text/plain", ByteArray(100))
@@ -451,7 +451,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isBadRequest)
 			}
 
-			it("이미 파일이 있는 서류에 재업로드하면 409를 반환한다 (PI-162 C10)") {
+			test("이미 파일이 있는 서류에 재업로드하면 409를 반환한다 (PI-162 C10)") {
 				val caseId = insertInquiryCase()
 				val docId = insertDocumentForCase(caseId)
 				val file = MockMultipartFile("file", "test.pdf", "application/pdf", ByteArray(100))
@@ -472,8 +472,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("GET /internal/cases") {
-			it("직원 인증으로 전체 케이스 목록을 반환한다 (PI-166 I1)") {
+		context("GET /internal/cases") {
+			test("직원 인증으로 전체 케이스 목록을 반환한다 (PI-166 I1)") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders
@@ -483,15 +483,15 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("internal-cases-list"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-166 I1)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-166 I1)") {
 				docsMvc
 					.perform(MockMvcRequestBuilders.get("/internal/cases"))
 					.andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 		}
 
-		describe("GET /internal/cases/{id}") {
-			it("직원 인증으로 케이스 상세+타임라인을 반환한다 (PI-167 I2)") {
+		context("GET /internal/cases/{id}") {
+			test("직원 인증으로 케이스 상세+타임라인을 반환한다 (PI-167 I2)") {
 				val caseId = insertCaseForSales()
 				docsMvc
 					.perform(
@@ -504,7 +504,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("internal-case-detail"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-167 I2)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-167 I2)") {
 				val caseId = insertCaseForSales()
 				docsMvc
 					.perform(MockMvcRequestBuilders.get("/internal/cases/$caseId"))
@@ -512,8 +512,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /internal/cases/{id}/advance") {
-			it("INITIAL_SCREENING 케이스를 SALES가 전진시키고 200을 반환한다 (PI-168 I3)") {
+		context("POST /internal/cases/{id}/advance") {
+			test("INITIAL_SCREENING 케이스를 SALES가 전진시키고 200을 반환한다 (PI-168 I3)") {
 				val caseId = insertCaseForSales()
 				docsMvc
 					.perform(
@@ -525,8 +525,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /internal/cases/{id}/close") {
-			it("INITIAL_SCREENING 케이스를 종료하고 200+CLOSED 상태를 반환한다 (PI-169 I4)") {
+		context("POST /internal/cases/{id}/close") {
+			test("INITIAL_SCREENING 케이스를 종료하고 200+CLOSED 상태를 반환한다 (PI-169 I4)") {
 				val caseId = insertCaseForSales()
 				docsMvc
 					.perform(
@@ -540,7 +540,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("internal-case-close"))
 			}
 
-			it("사유 없이 종료 요청하면 400을 반환한다 (PI-169 I4)") {
+			test("사유 없이 종료 요청하면 400을 반환한다 (PI-169 I4)") {
 				val caseId = insertCaseForSales()
 				docsMvc
 					.perform(
@@ -552,8 +552,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /auth/otp/request") {
-			it("유효한 이메일로 OTP 요청 시 200 + sent:true를 반환한다 (PI-163 C11)") {
+		context("POST /auth/otp/request") {
+			test("유효한 이메일로 OTP 요청 시 200 + sent:true를 반환한다 (PI-163 C11)") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders
@@ -565,7 +565,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("auth-otp-request"))
 			}
 
-			it("요청 body 없이 요청하면 400을 반환한다 (PI-163 C11)") {
+			test("요청 body 없이 요청하면 400을 반환한다 (PI-163 C11)") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders
@@ -575,8 +575,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /auth/otp/verify") {
-			it("올바른 OTP로 검증 시 200 + token을 반환한다 (PI-164 C12)") {
+		context("POST /auth/otp/verify") {
+			test("올바른 OTP로 검증 시 200 + token을 반환한다 (PI-164 C12)") {
 				val email = "verify-ok@example.com"
 				redis.opsForValue().set("otp:$email", "123456", Duration.ofSeconds(300))
 				docsMvc
@@ -590,7 +590,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("auth-otp-verify"))
 			}
 
-			it("잘못된 OTP로 검증 시 401을 반환한다 (PI-164 C12)") {
+			test("잘못된 OTP로 검증 시 401을 반환한다 (PI-164 C12)") {
 				val email = "verify-wrong@example.com"
 				redis.opsForValue().set("otp:$email", "999999", Duration.ofSeconds(300))
 				docsMvc
@@ -602,7 +602,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isUnauthorized)
 			}
 
-			it("OTP 미발급 상태에서 검증 시 401을 반환한다 (PI-164 C12)") {
+			test("OTP 미발급 상태에서 검증 시 401을 반환한다 (PI-164 C12)") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders
@@ -613,8 +613,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /internal/documents/{id}/revision-requests") {
-			it("직원 인증으로 SUBMITTED 서류에 보완요청 시 200을 반환한다 (PI-170 I5)") {
+		context("POST /internal/documents/{id}/revision-requests") {
+			test("직원 인증으로 SUBMITTED 서류에 보완요청 시 200을 반환한다 (PI-170 I5)") {
 				val caseId = insertInquiryCase()
 				val docId = insertSubmittedDocument(caseId)
 				docsMvc
@@ -629,7 +629,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("internal-document-revision-request"))
 			}
 
-			it("body 없이 요청하면 400을 반환한다 (PI-170 I5)") {
+			test("body 없이 요청하면 400을 반환한다 (PI-170 I5)") {
 				val caseId = insertInquiryCase()
 				val docId = insertSubmittedDocument(caseId)
 				docsMvc
@@ -641,7 +641,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					).andExpect(MockMvcResultMatchers.status().isBadRequest)
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-170 I5)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-170 I5)") {
 				val caseId = insertInquiryCase()
 				val docId = insertSubmittedDocument(caseId)
 				docsMvc
@@ -654,8 +654,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /internal/documents/{id}/approve") {
-			it("SUBMITTED 서류 승인 시 200 + status APPROVED를 반환한다 (PI-171 I6)") {
+		context("POST /internal/documents/{id}/approve") {
+			test("SUBMITTED 서류 승인 시 200 + status APPROVED를 반환한다 (PI-171 I6)") {
 				val caseId = insertInquiryCase()
 				val docId = insertSubmittedDocument(caseId)
 				docsMvc
@@ -668,7 +668,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("internal-document-approve"))
 			}
 
-			it("인증 없이 요청하면 401을 반환한다 (PI-171 I6)") {
+			test("인증 없이 요청하면 401을 반환한다 (PI-171 I6)") {
 				val caseId = insertInquiryCase()
 				val docId = insertSubmittedDocument(caseId)
 				docsMvc
@@ -677,8 +677,8 @@ class ArkApiRestDocsTest : DescribeSpec() {
 			}
 		}
 
-		describe("POST /internal/auth/mock-login") {
-			it("활성 직원 이메일로 로그인 시 200 + token을 반환한다 (PI-172 I7)") {
+		context("POST /internal/auth/mock-login") {
+			test("활성 직원 이메일로 로그인 시 200 + token을 반환한다 (PI-172 I7)") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders
@@ -690,7 +690,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 					.andDo(MockMvcRestDocumentation.document("internal-auth-mock-login"))
 			}
 
-			it("존재하지 않는 이메일로 로그인 시 401을 반환한다 (PI-172 I7)") {
+			test("존재하지 않는 이메일로 로그인 시 401을 반환한다 (PI-172 I7)") {
 				docsMvc
 					.perform(
 						MockMvcRequestBuilders

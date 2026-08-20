@@ -4,7 +4,7 @@ import com.sentbe.bizplatform.ark.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.ark.document.application.service.S3StorageService
 import com.sentbe.bizplatform.ark.intake.application.port.out.IntakeOutPort
 import com.sentbe.bizplatform.ark.support.ArkTestContainerInitializer
-import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -19,7 +19,7 @@ import java.util.UUID
 @SpringBootTest
 @ActiveProfiles("local")
 @ContextConfiguration(initializers = [ArkTestContainerInitializer::class])
-class IntakeOutAdapterIntegrationTest : DescribeSpec() {
+class IntakeOutAdapterIntegrationTest : FunSpec() {
 	@MockitoBean
 	lateinit var s3StorageService: S3StorageService
 
@@ -30,7 +30,7 @@ class IntakeOutAdapterIntegrationTest : DescribeSpec() {
 	lateinit var jdbc: JdbcClient
 
 	init {
-		describe("IntakeOutAdapter") {
+		context("IntakeOutAdapter") {
 			val customerId = UUID.randomUUID()
 			lateinit var caseId: UUID
 

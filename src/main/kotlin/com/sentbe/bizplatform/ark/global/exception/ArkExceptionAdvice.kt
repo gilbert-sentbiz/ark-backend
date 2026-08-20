@@ -12,7 +12,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
-import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.sql.SQLException
 
@@ -24,15 +23,6 @@ class ArkExceptionAdvice {
 		return ResponseEntity
 			.status(code.httpStatus)
 			.body(ApiResponse.exception(code.statusCode, code.code, ex.message ?: code.message, ex.data?.toString()))
-	}
-
-	// 과도기: 서비스 ResponseStatusException → ArkException 전환 전까지 유지
-	@ExceptionHandler(ResponseStatusException::class)
-	fun handleResponseStatus(ex: ResponseStatusException): ResponseEntity<ApiResponse<Nothing>> {
-		val status = ex.statusCode.value()
-		return ResponseEntity
-			.status(ex.statusCode)
-			.body(ApiResponse.exception(status, "G$status", ex.reason ?: ex.message))
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException::class)

@@ -2,15 +2,16 @@ package com.sentbe.bizplatform.ark.customer.application.service
 
 import com.sentbe.bizplatform.ark.customer.application.domain.Customer
 import com.sentbe.bizplatform.ark.customer.application.domain.CustomerSession
-import com.sentbe.bizplatform.ark.customer.application.port.input.CustomerAuthUseCase
+import com.sentbe.bizplatform.ark.customer.application.port.`in`.CustomerAuthPort
 import com.sentbe.bizplatform.ark.customer.application.port.out.CustomerOutPort
 import com.sentbe.bizplatform.ark.global.auth.OtpSender
+import com.sentbe.bizplatform.ark.global.exception.ArkException
+import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 import java.security.SecureRandom
 import java.time.Duration
 import java.time.OffsetDateTime
@@ -23,7 +24,7 @@ class CustomerAuthService(
 	private val otpSender: OtpSender,
 	@Value("\${arc.auth.otp-ttl-seconds:300}") private val otpTtlSeconds: Long,
 	@Value("\${arc.auth.session-hours:72}") private val sessionHours: Long,
-) : CustomerAuthUseCase {
+) : CustomerAuthPort {
 	private val random = SecureRandom()
 
 	override fun requestOtp(email: String) {
@@ -39,8 +40,8 @@ class CustomerAuthService(
 	): String {
 		val stored =
 			redis.opsForValue().get(otpKey(email))
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "OTP 만료 또는 미발급")
-		if (stored != code) throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "OTP 불일치")
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
+		if (stored != code) throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 
 		redis.delete(otpKey(email))
 

@@ -1,10 +1,12 @@
-package com.sentbe.bizplatform.ark.rule.adapter.input
+package com.sentbe.bizplatform.ark.rule.adapter.`in`
 
 import com.sentbe.bizplatform.ark.global.auth.AuthContext
+import com.sentbe.bizplatform.ark.global.exception.ArkException
+import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import com.sentbe.bizplatform.ark.rule.application.domain.DocTemplate
 import com.sentbe.bizplatform.ark.rule.application.domain.Question
 import com.sentbe.bizplatform.ark.rule.application.domain.Segment
-import com.sentbe.bizplatform.ark.rule.application.port.input.RuleUseCase
+import com.sentbe.bizplatform.ark.rule.application.port.`in`.RulePort
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -12,7 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 data class SegmentDto(
@@ -59,8 +60,8 @@ data class ActiveRulesResponse(
 @Tag(name = "Rules", description = "룰 조회 API")
 @RestController
 @RequestMapping("/rules")
-class RuleController(
-	private val service: RuleUseCase,
+class RuleAdapter(
+	private val service: RulePort,
 ) {
 	@Operation(summary = "C13 활성 룰 조회")
 	@GetMapping("/active")
@@ -68,7 +69,7 @@ class RuleController(
 		@RequestParam(required = false) segment: String?,
 	): ActiveRulesResponse {
 		if (AuthContext.customer == null && AuthContext.staff == null) {
-			throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다")
+			throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		}
 		val rules = service.getActiveRules(segment)
 		return ActiveRulesResponse(
