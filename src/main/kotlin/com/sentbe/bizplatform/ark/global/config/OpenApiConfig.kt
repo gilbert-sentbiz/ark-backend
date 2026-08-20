@@ -12,7 +12,7 @@ class OpenApiConfig {
 		OpenAPI()
 			.info(
 				Info()
-					.title("ARC Onboarding API")
+					.title("ARK Onboarding API")
 					.description("SentBe B2B 고객 온보딩 플랫폼 API")
 					.version("v1"),
 			)
