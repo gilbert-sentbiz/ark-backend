@@ -1,6 +1,6 @@
 spring:
   application:
-    name: arc-backend
+    name: ark-backend
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   threads:
@@ -8,13 +8,13 @@ spring:
       enabled: true
 
 springdoc:
-  packages-to-scan: com.sentbe.bizplatform.arc
+  packages-to-scan: com.sentbe.bizplatform.ark
   swagger-ui:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
 
-arc:
+ark:
   auth:
     otp-ttl-seconds: 300
     session-hours: 72

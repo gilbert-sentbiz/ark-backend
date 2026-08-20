@@ -1,6 +1,6 @@
 package io.kotest.provided
 
-import com.sentbe.bizplatform.arc.support.SpringKotest6Extension
+import com.sentbe.bizplatform.ark.support.SpringKotest6Extension
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 
