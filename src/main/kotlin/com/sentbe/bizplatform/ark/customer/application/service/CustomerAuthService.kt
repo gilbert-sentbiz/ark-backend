@@ -22,8 +22,8 @@ class CustomerAuthService(
 	private val outPort: CustomerOutPort,
 	private val redis: StringRedisTemplate,
 	private val otpSender: OtpSender,
-	@Value("\${arc.auth.otp-ttl-seconds:300}") private val otpTtlSeconds: Long,
-	@Value("\${arc.auth.session-hours:72}") private val sessionHours: Long,
+	@Value("\${ark.auth.otp-ttl-seconds:300}") private val otpTtlSeconds: Long,
+	@Value("\${ark.auth.session-hours:72}") private val sessionHours: Long,
 ) : CustomerAuthPort {
 	private val random = SecureRandom()
 

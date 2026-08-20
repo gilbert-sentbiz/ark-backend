@@ -15,7 +15,7 @@ import java.util.UUID
 @Service
 class StaffAuthService(
 	private val outPort: StaffOutPort,
-	@Value("\${arc.auth.staff-session-hours:8}") private val sessionHours: Long,
+	@Value("\${ark.auth.staff-session-hours:8}") private val sessionHours: Long,
 ) : StaffAuthPort {
 	@Transactional
 	override fun mockLogin(email: String): String {

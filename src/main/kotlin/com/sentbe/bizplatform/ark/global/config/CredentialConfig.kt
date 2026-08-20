@@ -45,10 +45,10 @@ class EnvCredentialConfig {
 		@Value("\${spring.datasource.url}") dbUrl: String,
 		@Value("\${spring.datasource.username}") dbUser: String,
 		@Value("\${spring.datasource.password}") dbPass: String,
-		@Value("\${arc.s3.endpoint:}") s3Endpoint: String,
-		@Value("\${arc.s3.bucket}") s3Bucket: String,
-		@Value("\${arc.s3.access-key}") s3AccessKey: String,
-		@Value("\${arc.s3.secret-key}") s3SecretKey: String,
+		@Value("\${ark.s3.endpoint:}") s3Endpoint: String,
+		@Value("\${ark.s3.bucket}") s3Bucket: String,
+		@Value("\${ark.s3.access-key}") s3AccessKey: String,
+		@Value("\${ark.s3.secret-key}") s3SecretKey: String,
 		@Value("\${spring.data.redis.host}") redisHost: String,
 		@Value("\${spring.data.redis.port}") redisPort: Int,
 	): CredentialSource =
@@ -76,8 +76,8 @@ class EnvCredentialConfig {
 @Configuration
 @Profile("dev", "stg", "prd")
 class AwsCredentialConfig(
-	@Value("\${arc.secrets.manager.secret-id}") private val secretId: String,
-	@Value("\${arc.secrets.manager.region}") private val awsRegion: String,
+	@Value("\${ark.secrets.manager.secret-id}") private val secretId: String,
+	@Value("\${ark.secrets.manager.region}") private val awsRegion: String,
 ) {
 	@Bean
 	fun credentialSource(mapper: ObjectMapper): CredentialSource {
