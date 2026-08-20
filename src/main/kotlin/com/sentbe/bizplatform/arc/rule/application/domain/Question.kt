@@ -1,13 +1,10 @@
 package com.sentbe.bizplatform.arc.rule.application.domain
 
-import org.springframework.data.annotation.Id
-import org.springframework.data.relational.core.mapping.Table
 import java.time.OffsetDateTime
 import java.util.UUID
 
-@Table("question")
 data class Question(
-	@Id val id: UUID,
+	val id: UUID,
 	val code: String,
 	val phase: String,
 	val classification: String,
