@@ -40,7 +40,7 @@ class RuleQueryAdapterIntegrationTest : FunSpec() {
 					val id = UUID.randomUUID()
 					jdbc
 						.sql(
-							"INSERT INTO segment (id, axis, code, label, deactivated_at) VALUES (:id, 'test', 'TEST_DEACT', '삭제 테스트', :at)",
+							"INSERT INTO segment (id, axis, code, label, deactivated_at) VALUES (:id, 'entity', 'TEST_DEACT', '삭제 테스트', :at)",
 						).param("id", id)
 						.param("at", OffsetDateTime.now())
 						.update()
