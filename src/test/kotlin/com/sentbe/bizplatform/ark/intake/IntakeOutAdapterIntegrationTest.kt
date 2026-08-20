@@ -35,6 +35,11 @@ class IntakeOutAdapterIntegrationTest : FunSpec() {
 			lateinit var caseId: UUID
 
 			beforeEach {
+				jdbc
+					.sql("INSERT INTO customer (id, email, auth_method) VALUES (:id, :email, 'otp')")
+					.param("id", customerId)
+					.param("email", "intake-test-$customerId@example.com")
+					.update()
 				caseId = UUID.randomUUID()
 				jdbc
 					.sql(
@@ -47,6 +52,7 @@ class IntakeOutAdapterIntegrationTest : FunSpec() {
 			afterEach {
 				jdbc.sql("DELETE FROM intake_response WHERE case_id = :caseId").param("caseId", caseId).update()
 				jdbc.sql("DELETE FROM onboarding_case WHERE id = :id").param("id", caseId).update()
+				jdbc.sql("DELETE FROM customer WHERE id = :id").param("id", customerId).update()
 			}
 
 			context("save and findByCaseIdAndPhase") {
