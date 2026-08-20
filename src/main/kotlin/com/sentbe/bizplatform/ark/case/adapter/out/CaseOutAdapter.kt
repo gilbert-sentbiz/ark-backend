@@ -1,18 +1,14 @@
 package com.sentbe.bizplatform.ark.case.adapter.out
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.sentbe.bizplatform.ark.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.ark.case.application.domain.OnboardingCase
 import com.sentbe.bizplatform.ark.case.application.port.out.CaseOutPort
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
-import java.sql.ResultSet
 import java.time.OffsetDateTime
 import java.util.UUID
 
 private val MAPPER = ObjectMapper().findAndRegisterModules()
-private val MAP_TYPE = object : TypeReference<Map<String, Any>>() {}
 
 @Component
 class CaseOutAdapter(
@@ -81,55 +77,6 @@ class CaseOutAdapter(
 
 	override fun findAllForDashboard(): List<OnboardingCase> = caseRepository.findAllForDashboard().map { it.toDomain() }
 
-	override fun saveIntake(intake: IntakeResponse): IntakeResponse {
-		val exists =
-			jdbc
-				.sql("SELECT 1 FROM intake_response WHERE case_id = :caseId AND phase = :phase")
-				.param("caseId", intake.caseId)
-				.param("phase", intake.phase)
-				.query(Int::class.java)
-				.optional()
-				.isPresent
-
-		if (exists) {
-			jdbc
-				.sql(
-					"""UPDATE intake_response
-                   SET status = :status, answers = :answers::jsonb,
-                       saved_at = now(), submitted_at = :submittedAt
-                   WHERE case_id = :caseId AND phase = :phase""",
-				).param("caseId", intake.caseId)
-				.param("phase", intake.phase)
-				.param("status", intake.status)
-				.param("answers", MAPPER.writeValueAsString(intake.answers))
-				.param("submittedAt", intake.submittedAt)
-				.update()
-		} else {
-			jdbc
-				.sql(
-					"""INSERT INTO intake_response (case_id, phase, status, answers)
-                   VALUES (:caseId, :phase, :status, :answers::jsonb)""",
-				).param("caseId", intake.caseId)
-				.param("phase", intake.phase)
-				.param("status", intake.status)
-				.param("answers", MAPPER.writeValueAsString(intake.answers))
-				.update()
-		}
-		return findIntake(intake.caseId, intake.phase)!!
-	}
-
-	override fun findIntake(
-		caseId: UUID,
-		phase: String,
-	): IntakeResponse? =
-		jdbc
-			.sql("SELECT * FROM intake_response WHERE case_id = :caseId AND phase = :phase")
-			.param("caseId", caseId)
-			.param("phase", phase)
-			.query { rs, _ -> rs.toIntake() }
-			.optional()
-			.orElse(null)
-
 	override fun findCaseEvents(caseId: UUID): List<Map<String, Any>> =
 		caseEventRepository.findByCaseIdOrderByCreatedAt(caseId).map { entity ->
 			mapOf<String, Any>(
@@ -188,17 +135,6 @@ class CaseOutAdapter(
 			lastCustomerActionAt = lastCustomerActionAt,
 			createdAt = createdAt ?: OffsetDateTime.now(),
 			updatedAt = updatedAt ?: OffsetDateTime.now(),
-		)
-
-	private fun ResultSet.toIntake(): IntakeResponse =
-		IntakeResponse(
-			id = UUID.fromString(getString("id")),
-			caseId = UUID.fromString(getString("case_id")),
-			phase = getString("phase"),
-			status = getString("status"),
-			answers = MAPPER.readValue(getString("answers") ?: "{}", MAP_TYPE),
-			savedAt = getObject("saved_at", OffsetDateTime::class.java),
-			submittedAt = getObject("submitted_at", OffsetDateTime::class.java),
 		)
 
 	private fun List<String>.toPgArray(): String = "{${joinToString(",") { it.replace(",", "\\,") }}}"

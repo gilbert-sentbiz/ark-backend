@@ -1,6 +1,5 @@
 package com.sentbe.bizplatform.ark.case.application.port.out
 
-import com.sentbe.bizplatform.ark.case.application.domain.IntakeResponse
 import com.sentbe.bizplatform.ark.case.application.domain.OnboardingCase
 import java.util.UUID
 
@@ -12,13 +11,6 @@ interface CaseOutPort {
 	fun findByCustomerId(customerId: UUID): OnboardingCase?
 
 	fun findAllForDashboard(): List<OnboardingCase>
-
-	fun saveIntake(intake: IntakeResponse): IntakeResponse
-
-	fun findIntake(
-		caseId: UUID,
-		phase: String,
-	): IntakeResponse?
 
 	fun findCaseEvents(caseId: UUID): List<Map<String, Any>>
 

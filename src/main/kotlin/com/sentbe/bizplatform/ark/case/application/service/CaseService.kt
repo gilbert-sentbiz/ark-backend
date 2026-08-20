@@ -10,6 +10,7 @@ import com.sentbe.bizplatform.ark.global.event.Actor
 import com.sentbe.bizplatform.ark.global.event.ActorType
 import com.sentbe.bizplatform.ark.global.event.CaseEventAppender
 import com.sentbe.bizplatform.ark.global.event.EventType
+import com.sentbe.bizplatform.ark.intake.application.port.out.IntakeOutPort
 import com.sentbe.bizplatform.ark.rule.application.port.out.RulePort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -20,6 +21,7 @@ import java.util.UUID
 @Service
 class CaseService(
 	private val adapter: CaseOutPort,
+	private val intakePort: IntakeOutPort,
 	private val rulePort: RulePort,
 	private val classificationService: ClassificationService,
 	private val eventAppender: CaseEventAppender,
@@ -65,9 +67,9 @@ class CaseService(
 		val case = requireCase(caseId)
 		requireCustomerOwns(case, customerId)
 		val intake =
-			adapter.findIntake(caseId, phase)
+			intakePort.findByCaseIdAndPhase(caseId, phase)
 				?: IntakeResponse(caseId = caseId, phase = phase)
-		val saved = adapter.saveIntake(intake.copy(answers = answers))
+		val saved = intakePort.save(intake.copy(answers = answers))
 		adapter.save(case.copy(lastCustomerActionAt = saved.savedAt))
 		return saved
 	}
@@ -83,7 +85,7 @@ class CaseService(
 		if (case.status != CaseStatus.INQUIRY_RECEIVED) {
 			throw ResponseStatusException(HttpStatus.CONFLICT, "1차 인테이크를 제출할 수 없는 상태입니다")
 		}
-		val existingIntake = adapter.findIntake(caseId, "first")
+		val existingIntake = intakePort.findByCaseIdAndPhase(caseId, "first")
 		if (existingIntake?.status == "submitted") {
 			throw ResponseStatusException(HttpStatus.CONFLICT, "1차 인테이크가 이미 제출되었습니다")
 		}
@@ -91,7 +93,7 @@ class CaseService(
 		val intake =
 			(existingIntake ?: IntakeResponse(caseId = caseId, phase = "first"))
 				.copy(answers = answers, status = "submitted", submittedAt = java.time.OffsetDateTime.now())
-		adapter.saveIntake(intake)
+		intakePort.save(intake)
 
 		val allRules = rulePort.getActiveRules(null)
 		val matchedSegments = classificationService.classify(answers, allRules.segments)
@@ -145,9 +147,9 @@ class CaseService(
 		}
 
 		val intake =
-			(adapter.findIntake(caseId, "second") ?: IntakeResponse(caseId = caseId, phase = "second"))
+			(intakePort.findByCaseIdAndPhase(caseId, "second") ?: IntakeResponse(caseId = caseId, phase = "second"))
 				.copy(answers = answers, status = "submitted", submittedAt = java.time.OffsetDateTime.now())
-		adapter.saveIntake(intake)
+		intakePort.save(intake)
 
 		createDocumentsForCase(case)
 
@@ -232,7 +234,7 @@ class CaseService(
 	override fun getIntake(
 		caseId: UUID,
 		phase: String,
-	): IntakeResponse? = adapter.findIntake(caseId, phase)
+	): IntakeResponse? = intakePort.findByCaseIdAndPhase(caseId, phase)
 
 	@Transactional
 	override fun resubmit(
