@@ -64,7 +64,7 @@ class ArkApiRestDocsTest : DescribeSpec() {
 
 	init {
 		beforeSpec {
-			restDocumentation.beforeTest(javaClass, "arc-api-docs")
+			restDocumentation.beforeTest(javaClass, "ark-api-docs")
 			val builder = MockMvcBuilders.webAppContextSetup(wac)
 			builder.addFilter<DefaultMockMvcBuilder>(customerAuthFilterReg.filter!! as Filter, "/*")
 			builder.addFilter<DefaultMockMvcBuilder>(staffAuthFilterReg.filter!! as Filter, "/internal/*")

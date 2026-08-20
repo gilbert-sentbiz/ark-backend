@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/arc}
-    username: ${DB_USERNAME:arc}
-    password: ${DB_PASSWORD:arc}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ark}
+    username: ${DB_USERNAME:ark}
+    password: ${DB_PASSWORD:ark}
     driver-class-name: org.postgresql.Driver
 
   liquibase:
@@ -17,6 +17,6 @@ spring:
 ark:
   s3:
     endpoint: ${S3_ENDPOINT:http://localhost:9000}
-    bucket: ${S3_BUCKET:arc-documents}
+    bucket: ${S3_BUCKET:ark-documents}
     access-key: ${S3_ACCESS_KEY:minioadmin}
     secret-key: ${S3_SECRET_KEY:minioadmin}

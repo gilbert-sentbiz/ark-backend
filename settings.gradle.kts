@@ -1,1 +1,1 @@
-rootProject.name = "arc-backend"
+rootProject.name = "ark-backend"
