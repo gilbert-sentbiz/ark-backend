@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset arc-dev:V003-segment
+--changeset ark-dev:V003-segment
 INSERT INTO segment (id, axis, code, label, classification_trigger) VALUES
   ('a0000001-0001-0000-0000-000000000000', 'entity', 'ENTITY_CORP', '한국 법인',
    '[{"priority":10,"logic":"AND","conditions":[{"field":"businessType","op":"eq","value":"corporation"},{"field":"foundingCountry","op":"eq","value":"KR"}]}]'),
@@ -9,14 +9,14 @@ INSERT INTO segment (id, axis, code, label, classification_trigger) VALUES
   ('a0000003-0001-0000-0000-000000000000', 'service', 'SVC_PAYOUT', '해외 송금',
    '[{"priority":1,"logic":"AND","conditions":[{"field":"services","op":"contains","value":"remittance"}]}]');
 
---changeset arc-dev:V003-staff
+--changeset ark-dev:V003-staff
 INSERT INTO staff (id, email, name, role) VALUES
   ('00000001-0001-0000-0000-000000000000', 'sales@sentbe.com',      '영업 테스트',          'SALES'),
   ('00000002-0001-0000-0000-000000000000', 'ops@sentbe.com',        '운영 테스트',          'OPS'),
   ('00000003-0001-0000-0000-000000000000', 'compliance@sentbe.com', '컴플라이언스 테스트',  'COMPLIANCE'),
   ('00000004-0001-0000-0000-000000000000', 'admin@sentbe.com',      '관리자 테스트',        'ADMIN');
 
---changeset arc-dev:V003-question-first-common
+--changeset ark-dev:V003-question-first-common
 INSERT INTO question (id, code, phase, classification, label, input_type, is_required, options, show_when, display_order) VALUES
   ('c0000001-0001-0000-0000-000000000000', 'fi_company_name',   'first', 'common', '회사명',         'text',  true,  null, null, 1),
   ('c0000002-0001-0000-0000-000000000000', 'fi_contact_name',   'first', 'common', '담당자 이름',    'text',  true,  null, null, 2),
@@ -54,7 +54,7 @@ INSERT INTO question (id, code, phase, classification, label, input_type, is_req
    null, 13),
   ('c0000014-0001-0000-0000-000000000000', 'fi_additional_note', 'first', 'common', '추가 문의사항', 'textarea', false, null, null, 14);
 
---changeset arc-dev:V003-question-second-common
+--changeset ark-dev:V003-question-second-common
 INSERT INTO question (id, code, phase, classification, label, input_type, is_required, options, show_when, display_order) VALUES
   ('d0000001-0001-0000-0000-000000000000', 'qc_biz_reg_no',   'second', 'common', '사업자등록번호', 'text', true,  null, null, 1),
   ('d0000002-0001-0000-0000-000000000000', 'qc_biz_type',     'second', 'common', '업종',           'text', true,  null, null, 2),
@@ -68,7 +68,7 @@ INSERT INTO question (id, code, phase, classification, label, input_type, is_req
    '[{"value":"business_revenue","label":"사업 수익"},{"value":"investment","label":"투자금"},{"value":"loan","label":"대출"},{"value":"other","label":"기타"}]',
    null, 5);
 
---changeset arc-dev:V003-question-second-common-vasp
+--changeset ark-dev:V003-question-second-common-vasp
 INSERT INTO question (id, code, phase, classification, label, input_type, is_required, options, show_when, parent_question_id, display_order) VALUES
   ('d0000005-0001-0000-0000-000000000000', 'qc_vasp_custody', 'second', 'common',
    '가상자산 수탁(커스터디) 서비스 제공 여부', 'radio', true,
@@ -93,7 +93,7 @@ INSERT INTO question (id, code, phase, classification, label, input_type, is_req
    '{"question_id":"d0000006-0001-0000-0000-000000000000","value":"yes"}',
    'd0000006-0001-0000-0000-000000000000', 2);
 
---changeset arc-dev:V003-question-second-corp
+--changeset ark-dev:V003-question-second-corp
 INSERT INTO question (id, code, phase, classification, owner_segment_id, label, input_type, is_required, options, display_order) VALUES
   ('e0000001-0001-0000-0000-000000000000', 'qe_corp_name_kr', 'second', 'own', 'a0000001-0001-0000-0000-000000000000', '법인명 (한글)', 'text', true, null, 1),
   ('e0000002-0001-0000-0000-000000000000', 'qe_corp_name_en', 'second', 'own', 'a0000001-0001-0000-0000-000000000000', '법인명 (영문)', 'text', true, null, 2),
@@ -123,7 +123,7 @@ INSERT INTO question (id, code, phase, classification, owner_segment_id, label, 
   ('e0000030-0001-0000-0000-000000000000', 'qe_corp_founded_date', 'second', 'own', 'a0000001-0001-0000-0000-000000000000',
    '법인 설립일', 'date', true, null, 18);
 
---changeset arc-dev:V003-question-second-corp-conditional
+--changeset ark-dev:V003-question-second-corp-conditional
 INSERT INTO question (id, code, phase, classification, owner_segment_id, label, input_type, is_required, options, show_when, parent_question_id, display_order) VALUES
   ('e0000010-0001-0000-0000-000000000000', 'qe_corp_rep_count', 'second', 'own', 'a0000001-0001-0000-0000-000000000000',
    '공동 대표 총 인원수', 'number', true, null,
@@ -141,14 +141,14 @@ INSERT INTO question (id, code, phase, classification, owner_segment_id, label, 
    '{"question_id":"e0000026-0001-0000-0000-000000000000","value":"other"}',
    'e0000026-0001-0000-0000-000000000000', 1);
 
---changeset arc-dev:V003-question-second-corp-repeat
+--changeset ark-dev:V003-question-second-corp-repeat
 INSERT INTO question (id, code, phase, classification, owner_segment_id, label, input_type, is_required, repeat, options, display_order) VALUES
   ('e0000011-0001-0000-0000-000000000000', 'qe_corp_rep_group', 'second', 'own', 'a0000001-0001-0000-0000-000000000000',
    '대표자 정보', 'text', true, true, null, 10),
   ('e0000020-0001-0000-0000-000000000000', 'qe_corp_bo_group', 'second', 'own', 'a0000001-0001-0000-0000-000000000000',
    '실소유자 정보', 'text', true, true, null, 14);
 
---changeset arc-dev:V003-question-second-corp-subfields
+--changeset ark-dev:V003-question-second-corp-subfields
 INSERT INTO question (id, code, phase, classification, owner_segment_id, label, input_type, is_required, options, parent_question_id, display_order) VALUES
   ('e0000012-0001-0000-0000-000000000000', 'qe_corp_rep_name_kr', 'second', 'own', 'a0000001-0001-0000-0000-000000000000', '이름 (한글)', 'text', true, null, 'e0000011-0001-0000-0000-000000000000', 1),
   ('e0000013-0001-0000-0000-000000000000', 'qe_corp_rep_name_en', 'second', 'own', 'a0000001-0001-0000-0000-000000000000', '이름 (영문)', 'text', true, null, 'e0000011-0001-0000-0000-000000000000', 2),
@@ -162,7 +162,7 @@ INSERT INTO question (id, code, phase, classification, owner_segment_id, label, 
   ('e0000024-0001-0000-0000-000000000000', 'qe_corp_bo_nation',  'second', 'own', 'a0000001-0001-0000-0000-000000000000', '국적', 'text', true, null, 'e0000020-0001-0000-0000-000000000000', 4),
   ('e0000025-0001-0000-0000-000000000000', 'qe_corp_bo_country', 'second', 'own', 'a0000001-0001-0000-0000-000000000000', '거주 국가', 'text', true, null, 'e0000020-0001-0000-0000-000000000000', 5);
 
---changeset arc-dev:V003-question-second-indiv
+--changeset ark-dev:V003-question-second-indiv
 INSERT INTO question (id, code, phase, classification, owner_segment_id, label, input_type, is_required, options, display_order) VALUES
   ('f0000001-0001-0000-0000-000000000000', 'qe_indiv_biz_name', 'second', 'own', 'a0000002-0001-0000-0000-000000000000', '상호명', 'text', true, null, 1),
   ('f0000002-0001-0000-0000-000000000000', 'qe_indiv_phone',    'second', 'own', 'a0000002-0001-0000-0000-000000000000', '사업장 전화번호', 'text', true, null, 2),
@@ -184,7 +184,7 @@ INSERT INTO question (id, code, phase, classification, owner_segment_id, label, 
    'SentBe 이용 목적', 'multi', true,
    '[{"value":"trade","label":"무역 결제"},{"value":"payroll","label":"급여 송금"},{"value":"investment","label":"투자"},{"value":"other","label":"기타"}]', 11);
 
---changeset arc-dev:V003-question-second-indiv-conditional
+--changeset ark-dev:V003-question-second-indiv-conditional
 INSERT INTO question (id, code, phase, classification, owner_segment_id, label, input_type, is_required, options, show_when, parent_question_id, display_order) VALUES
   ('f0000011-0001-0000-0000-000000000000', 'qe_indiv_bo_name_kr', 'second', 'own', 'a0000002-0001-0000-0000-000000000000', '실소유자 이름 (한글)', 'text', true, null,
    '{"question_id":"f0000010-0001-0000-0000-000000000000","value":"no"}', 'f0000010-0001-0000-0000-000000000000', 1),
@@ -201,7 +201,7 @@ INSERT INTO question (id, code, phase, classification, owner_segment_id, label, 
    '{"question_id":"f0000016-0001-0000-0000-000000000000","value":"other"}',
    'f0000016-0001-0000-0000-000000000000', 1);
 
---changeset arc-dev:V003-doc-template
+--changeset ark-dev:V003-doc-template
 INSERT INTO doc_template (id, type, display_name, classification, owner_segment_id, is_required, is_conditional, guide) VALUES
   ('e0000001-0001-0000-0000-000000000000', 'BIZ_REGISTRATION',        '사업자등록증',          'common', null, true,  false, '발급 3개월 이내 원본'),
   ('e0000002-0001-0000-0000-000000000000', 'ID_COPY',                 '대표자 신분증 사본',    'common', null, true,  false, '주민등록증 · 운전면허증 · 여권 중 1종'),

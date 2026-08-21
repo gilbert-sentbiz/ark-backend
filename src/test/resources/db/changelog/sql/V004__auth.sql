@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset arc-dev:V004-otp-token
+--changeset ark-dev:V004-otp-token
 create table otp_token (
   id         uuid primary key default gen_random_uuid(),
   email      varchar not null,
@@ -10,10 +10,10 @@ create table otp_token (
   created_at timestamptz not null default now()
 );
 
---changeset arc-dev:V004-otp-token-index
+--changeset ark-dev:V004-otp-token-index
 create index otp_token_email_idx on otp_token (email, expires_at);
 
---changeset arc-dev:V004-customer-session
+--changeset ark-dev:V004-customer-session
 create table customer_session (
   id          uuid primary key default gen_random_uuid(),
   customer_id uuid not null references customer (id),
@@ -22,10 +22,10 @@ create table customer_session (
   created_at  timestamptz not null default now()
 );
 
---changeset arc-dev:V004-customer-session-index
+--changeset ark-dev:V004-customer-session-index
 create index customer_session_token_idx on customer_session (token);
 
---changeset arc-dev:V004-staff-session
+--changeset ark-dev:V004-staff-session
 create table staff_session (
   id         uuid primary key default gen_random_uuid(),
   staff_id   uuid not null references staff (id),
@@ -34,5 +34,5 @@ create table staff_session (
   created_at timestamptz not null default now()
 );
 
---changeset arc-dev:V004-staff-session-index
+--changeset ark-dev:V004-staff-session-index
 create index staff_session_token_idx on staff_session (token);

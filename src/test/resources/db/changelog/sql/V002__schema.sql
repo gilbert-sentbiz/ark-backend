@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset arc-dev:V002-segment
+--changeset ark-dev:V002-segment
 create table segment (
   id                     uuid primary key default gen_random_uuid(),
   axis                   varchar not null check (axis in ('entity', 'service', 'sector')),
@@ -13,10 +13,10 @@ create table segment (
   deactivated_at         timestamptz
 );
 
---changeset arc-dev:V002-segment-index
+--changeset ark-dev:V002-segment-index
 create unique index segment_code_active_uq on segment (code) where deactivated_at is null;
 
---changeset arc-dev:V002-staff
+--changeset ark-dev:V002-staff
 create table staff (
   id         uuid primary key default gen_random_uuid(),
   email      varchar not null unique,
@@ -26,7 +26,7 @@ create table staff (
   created_at timestamptz not null default now()
 );
 
---changeset arc-dev:V002-question
+--changeset ark-dev:V002-question
 create table question (
   id                    uuid primary key default gen_random_uuid(),
   code                  varchar not null,
@@ -47,10 +47,10 @@ create table question (
   deactivated_at        timestamptz
 );
 
---changeset arc-dev:V002-question-index
+--changeset ark-dev:V002-question-index
 create unique index question_code_active_uq on question (code) where deactivated_at is null;
 
---changeset arc-dev:V002-question-immutable-trigger splitStatements:false
+--changeset ark-dev:V002-question-immutable-trigger splitStatements:false
 create or replace function question_enforce_immutable() returns trigger as $$
 begin
   if (to_jsonb(new) - 'deactivated_at') is distinct from (to_jsonb(old) - 'deactivated_at') then
@@ -63,7 +63,7 @@ create trigger question_immutable
   before update on question
   for each row execute function question_enforce_immutable();
 
---changeset arc-dev:V002-doc-template
+--changeset ark-dev:V002-doc-template
 create table doc_template (
   id               uuid primary key default gen_random_uuid(),
   type             varchar not null,
@@ -78,10 +78,10 @@ create table doc_template (
   deactivated_at   timestamptz
 );
 
---changeset arc-dev:V002-doc-template-index
+--changeset ark-dev:V002-doc-template-index
 create unique index doc_template_type_active_uq on doc_template (type) where deactivated_at is null;
 
---changeset arc-dev:V002-customer
+--changeset ark-dev:V002-customer
 create table customer (
   id              uuid primary key default gen_random_uuid(),
   email           varchar not null unique,
@@ -93,10 +93,10 @@ create table customer (
   created_at      timestamptz not null default now()
 );
 
---changeset arc-dev:V002-customer-index
+--changeset ark-dev:V002-customer-index
 create index customer_biz_reg_no_idx on customer (business_reg_no);
 
---changeset arc-dev:V002-onboarding-case
+--changeset ark-dev:V002-onboarding-case
 create table onboarding_case (
   id                      uuid primary key default gen_random_uuid(),
   customer_id             uuid not null references customer (id),
@@ -118,12 +118,12 @@ create table onboarding_case (
   updated_at              timestamptz not null default now()
 );
 
---changeset arc-dev:V002-case-indexes
+--changeset ark-dev:V002-case-indexes
 create unique index case_one_active_per_customer_uq on onboarding_case (customer_id)
   where status not in ('COMPLETED', 'CLOSED');
 create index case_dashboard_idx on onboarding_case (status, updated_at desc);
 
---changeset arc-dev:V002-intake-response
+--changeset ark-dev:V002-intake-response
 create table intake_response (
   id           uuid primary key default gen_random_uuid(),
   case_id      uuid not null references onboarding_case (id),
@@ -135,7 +135,7 @@ create table intake_response (
   unique (case_id, phase)
 );
 
---changeset arc-dev:V002-document
+--changeset ark-dev:V002-document
 create table document (
   id              uuid primary key default gen_random_uuid(),
   case_id         uuid not null references onboarding_case (id),
@@ -151,7 +151,7 @@ create table document (
   unique (case_id, type)
 );
 
---changeset arc-dev:V002-document-file
+--changeset ark-dev:V002-document-file
 create table document_file (
   id                uuid primary key default gen_random_uuid(),
   document_id       uuid not null references document (id),
@@ -166,10 +166,10 @@ create table document_file (
   check ((uploader_type = 'STAFF') = (uploader_staff_id is not null))
 );
 
---changeset arc-dev:V002-document-file-index
+--changeset ark-dev:V002-document-file-index
 create index document_file_document_idx on document_file (document_id);
 
---changeset arc-dev:V002-revision-request
+--changeset ark-dev:V002-revision-request
 create table revision_request (
   id                     uuid primary key default gen_random_uuid(),
   document_id            uuid not null references document (id),
@@ -180,10 +180,10 @@ create table revision_request (
   resolved_at            timestamptz
 );
 
---changeset arc-dev:V002-revision-request-index
+--changeset ark-dev:V002-revision-request-index
 create index revision_request_open_idx on revision_request (document_id) where resolved_at is null;
 
---changeset arc-dev:V002-case-event
+--changeset ark-dev:V002-case-event
 create table case_event (
   id         uuid primary key default gen_random_uuid(),
   case_id    uuid not null references onboarding_case (id),
@@ -195,5 +195,5 @@ create table case_event (
   created_at timestamptz not null default now()
 );
 
---changeset arc-dev:V002-case-event-index
+--changeset ark-dev:V002-case-event-index
 create index case_event_timeline_idx on case_event (case_id, created_at);
