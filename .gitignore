@@ -9,3 +9,6 @@ build/
 .idea/
 *.iml
 .DS_Store
+
+# gradle wrapper jar는 *.jar 제외에서 예외 (docker compose 빌드에 필요)
+!gradle/wrapper/gradle-wrapper.jar
