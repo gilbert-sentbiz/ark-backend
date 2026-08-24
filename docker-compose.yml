@@ -75,6 +75,20 @@ services:
       createbuckets:
         condition: service_completed_successfully
 
+  # PI-229: 프론트엔드 (Next.js standalone). 프론트 레포를 형제 경로로 클론한 전제:
+  #   /work/ark-backend + /work/ARK_Onboarding  →  context ../ARK_Onboarding/prototype-next
+  # FRONTEND_CONTEXT 로 경로 오버라이드 가능. 브라우저가 호출하는 API는 호스트 기준 localhost:8080.
+  frontend:
+    build:
+      context: ${FRONTEND_CONTEXT:-../ARK_Onboarding/prototype-next}
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${FRONTEND_API_URL:-http://localhost:8080}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_started
+
 volumes:
   pg_data:
   minio_data:
