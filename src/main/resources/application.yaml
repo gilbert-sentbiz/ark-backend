@@ -6,6 +6,12 @@ spring:
   threads:
     virtual:
       enabled: true
+  servlet:
+    multipart:
+      # PI-240: 기본 1MB → 프론트 업로드 정책(10MB)과 정합. 1MB 초과 파일이
+      # multipart 파싱 단계에서 거부돼 net::ERR_FAILED 나던 문제 해소.
+      max-file-size: 10MB
+      max-request-size: 12MB
 
 springdoc:
   packages-to-scan: com.sentbe.bizplatform.ark

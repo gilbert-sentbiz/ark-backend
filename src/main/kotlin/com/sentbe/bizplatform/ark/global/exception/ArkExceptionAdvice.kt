@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.multipart.MaxUploadSizeExceededException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.sql.SQLException
 
@@ -49,6 +50,16 @@ class ArkExceptionAdvice {
 		return ResponseEntity
 			.status(code.httpStatus)
 			.body(ApiResponse.exception(code.statusCode, code.code, code.message, "파라미터 타입 불일치: ${ex.name}"))
+	}
+
+	// PI-240: 업로드 파일이 multipart 한도(10MB) 초과 시 net::ERR_FAILED 대신
+	// 명확한 413 JSON 응답. @RestControllerAdvice라 CORS 헤더도 정상 포함됨.
+	@ExceptionHandler(MaxUploadSizeExceededException::class)
+	fun handleMaxUploadSize(ex: MaxUploadSizeExceededException): ResponseEntity<ApiResponse<Nothing>> {
+		val code = ArkGlobalErrorCode.INVALID_INPUT
+		return ResponseEntity
+			.status(HttpStatus.PAYLOAD_TOO_LARGE)
+			.body(ApiResponse.exception(code.statusCode, code.code, "파일 크기는 10MB를 초과할 수 없습니다."))
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException::class)
