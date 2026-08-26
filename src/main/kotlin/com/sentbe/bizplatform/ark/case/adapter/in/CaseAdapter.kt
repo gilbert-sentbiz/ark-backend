@@ -8,6 +8,7 @@ import com.sentbe.bizplatform.ark.global.exception.ArkGlobalErrorCode
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -48,6 +49,17 @@ class CaseAdapter(
 			AuthContext.customer
 				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
 		return service.createCase(customer.id).toResponse()
+	}
+
+	@Operation(summary = "C2b 본인 케이스 조회", description = "고객 토큰으로 본인 활성 케이스를 id 없이 조회. 재로그인/타 기기 복귀용. 없으면 204.")
+	@GetMapping("/me")
+	fun getMyCase(): ResponseEntity<CaseResponse> {
+		val customer =
+			AuthContext.customer
+				?: throw ArkException(ArkGlobalErrorCode.UNAUTHORIZED)
+		val case = service.findMyCase(customer.id)
+		// 없으면 204 No Content — 200+빈 본문으로 인한 프론트 json 파싱 에러 방지
+		return case?.let { ResponseEntity.ok(it.toResponse()) } ?: ResponseEntity.noContent().build()
 	}
 
 	@Operation(summary = "C2 케이스 상세")

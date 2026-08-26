@@ -40,6 +40,9 @@ interface CasePort {
 
 	fun getCase(caseId: UUID): OnboardingCase
 
+	// PI-242: 고객 본인 케이스 조회(id 없이). 재로그인/타 기기에서 케이스 복귀용.
+	fun findMyCase(customerId: UUID): OnboardingCase?
+
 	fun getCaseTimeline(caseId: UUID): List<Map<String, Any>>
 
 	fun getAllCases(): List<OnboardingCase>

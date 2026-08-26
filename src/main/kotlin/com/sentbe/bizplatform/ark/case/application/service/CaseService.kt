@@ -223,6 +223,9 @@ class CaseService(
 
 	override fun getCase(caseId: UUID): OnboardingCase = adapter.findById(caseId) ?: throw ArkException(ArkGlobalErrorCode.RESOURCE_NOT_FOUND)
 
+	// PI-242: 고객 본인 케이스(id 없이). 1계정 1활성 케이스 정책상 최대 1건.
+	override fun findMyCase(customerId: UUID): OnboardingCase? = adapter.findByCustomerId(customerId)
+
 	override fun getCaseTimeline(caseId: UUID): List<Map<String, Any>> {
 		requireCase(caseId)
 		return adapter.findCaseEvents(caseId)
