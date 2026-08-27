@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/sql/V004__auth.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/sql/V005__seed_fi_parity.sql
+      relativeToChangelogFile: false
